@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken'
 import connectDB from '@/lib/mongodb'
 import { User } from '@/models'
 
+export const runtime = 'nodejs'
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function GET(req: NextRequest) {

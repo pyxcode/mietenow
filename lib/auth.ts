@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs'
+import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { IUser } from '@/models/User'
 
@@ -17,7 +17,7 @@ export function generateToken(user: IUser): string {
     { 
       userId: user._id, 
       email: user.email,
-      subscription: user.subscription 
+      plan: user.plan 
     },
     JWT_SECRET,
     { expiresIn: '7d' }

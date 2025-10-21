@@ -251,18 +251,18 @@ export default function PaymentSuccess() {
                   <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0">
                     <Image
                       src="/Logos/pers6.png"
-                      alt={t.Friedrich}
+                      alt="Friedrich W."
                       width={48}
                       height={48}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold text-sm">{t.Friedrich}</h3>
-                    <p className="text-blue-200 text-xs">{t.FriedrichRole}</p>
+                    <h3 className="text-white font-semibold text-sm">Friedrich W.</h3>
+                    <p className="text-blue-200 text-xs">Student, TU Berlin</p>
                   </div>
                 </div>
-                <p className="text-gray-300 text-sm">"{t.FriedrichQuote}"</p>
+                <p className="text-gray-300 text-sm">"MieteNow hat mir geholfen, meine Traumwohnung in nur 2 Wochen zu finden. Die Benachrichtigungen sind super schnell!"</p>
               </div>
             </div>
           </div>

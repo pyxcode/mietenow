@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import { Transaction } from '@/models'
 
+export const runtime = 'nodejs'
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { userId: string } }
@@ -27,7 +29,7 @@ export async function GET(
       success: true,
       userId,
       totalTransactions: transactions.length,
-      activeTransactions: activeTransactions.length,
+      activeTransactionsCount: activeTransactions.length,
       transactions: transactions.map(t => ({
         id: t._id,
         stripeId: t.stripe_id,
