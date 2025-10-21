@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to avoid SSR issues with window object
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search, MapPin, Euro, Home, Filter, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -8,13 +11,7 @@ import UserDropdown from '@/components/UserDropdown'
 import Link from 'next/link'
 import Image from 'next/image'
 import 'leaflet/dist/leaflet.css'
-import {
-  MapContainer,
-  TileLayer,
-  CircleMarker,
-  Popup,
-  useMapEvents,
-} from 'react-leaflet'
+import MapComponent from '@/components/MapComponent'
 import type { LatLngBounds } from 'leaflet'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -135,17 +132,6 @@ export default function SearchPage() {
     }, 300)
   }
 
-  function MapEvents() {
-    useMapEvents({
-      moveend: (e) => {
-        setBounds(e.target.getBounds())
-      },
-      zoomend: (e) => {
-        setBounds(e.target.getBounds())
-      },
-    })
-    return null
-  }
 
   return (
     <div className="min-h-screen bg-cream">
@@ -327,34 +313,12 @@ export default function SearchPage() {
 
           {/* Right: full-height map (1/3) */}
           <div className="rounded-2xl overflow-hidden h-full lg:col-span-1">
-            <MapContainer 
-              center={[52.5208, 13.4095]} 
-              zoom={12} 
-              zoomSnap={1} 
-              zoomDelta={1} 
-              wheelPxPerZoomLevel={100} 
-              wheelDebounceTime={50} 
-              style={{ height: '100%', width: '100%', zIndex: 0 }} 
-              scrollWheelZoom={true}
-              touchZoom={true}
-              doubleClickZoom={true}
-              zoomControl={true}
-              maxZoom={18}
-              minZoom={8}
-            >
-              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <MapEvents />
-              {filtered.map((l) => (
-                <CircleMarker key={l.id} center={[l.lat, l.lng]} radius={activeId===l.id?10:6} pathOptions={{ color: activeId===l.id?'#00BFA6':'#002E73', weight: 2, fillOpacity: 0.7 }}>
-                  <Popup>
-                    <div className="text-sm">
-                      <div className="font-semibold mb-1">{l.title}</div>
-                      <div className="text-gray-600 mb-1">{l.price}€ • {l.size} m² • {l.type}</div>
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              ))}
-            </MapContainer>
+            <MapComponent 
+              listings={filtered}
+              selectedListing={filtered.find(l => l.id === activeId) || null}
+              onListingSelect={(listing) => setActiveId(listing.id)}
+              onBoundsChange={() => {}}
+            />
           </div>
         </div>
       </main>
