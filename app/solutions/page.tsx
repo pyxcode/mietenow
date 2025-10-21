@@ -153,32 +153,32 @@ export default function SolutionsPage() {
 
 
         {/* Section Pricing - Plus lisible */}
-        <section className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-16">
+        <section className="bg-white py-16">
           <div className="container-custom">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                {language === 'de' ? 'Pläne' : 'Plans'}
-              </h2>
-              <p className="text-2xl text-gray-300">
-                {language === 'de' 
-                  ? 'Wählen Sie den Plan, der zu Ihnen passt'
-                  : 'Choose the plan that fits you'
-                }
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {/* Plan 1 mois */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300">
-                <div className="bg-gray-500/20 rounded-full px-4 py-2 inline-block mb-6">
-                  <span className="text-white font-semibold">1 month</span>
+                <div className="text-center mb-12">
+                  <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                    {language === 'de' ? 'Pläne' : 'Plans'}
+                  </h2>
+                  <p className="text-2xl text-gray-600">
+                    {language === 'de' 
+                      ? 'Wählen Sie den Plan, der zu Ihnen passt'
+                      : 'Choose the plan that fits you'
+                    }
+                  </p>
                 </div>
-                <div className="text-4xl font-bold text-white mb-2">€29.95</div>
-                <div className="text-gray-300 mb-6 text-lg">per month</div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {/* Plan 1 mois */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300">
+                <div className="bg-gray-100 rounded-full px-4 py-2 inline-block mb-6">
+                  <span className="text-gray-700 font-semibold">1 month</span>
+                </div>
+                <div className="text-4xl font-bold text-gray-900 mb-2">€29.95</div>
+                <div className="text-gray-600 mb-6 text-lg">per month</div>
                 <button className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 mb-6">
                   Subscribe now!
                 </button>
-                <div className="space-y-2 text-gray-300 text-base">
+                <div className="space-y-2 text-gray-600 text-base">
                   <div className="flex items-center justify-center">
                     <span className="text-[#00BFA6] mr-2">✓</span>
                     Priority access
@@ -199,21 +199,21 @@ export default function SolutionsPage() {
               </div>
 
               {/* Plan 2 mois - Recommandé */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 border-2 border-[#00BFA6]/30 relative">
+              <div className="bg-white border-2 border-[#00BFA6] rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300 relative">
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="bg-[#00BFA6] text-white px-4 py-1 rounded-full text-sm font-semibold">
                     {language === 'de' ? 'Empfohlen' : 'Recommended'}
                   </span>
                 </div>
-                <div className="bg-[#00BFA6]/20 rounded-full px-4 py-2 inline-block mb-6">
+                <div className="bg-[#00BFA6] rounded-full px-4 py-2 inline-block mb-6">
                   <span className="text-white font-semibold">2 months</span>
                 </div>
-                <div className="text-4xl font-bold text-white mb-2">€19.95</div>
-                <div className="text-gray-300 mb-6 text-lg">per month</div>
+                <div className="text-4xl font-bold text-gray-900 mb-2">€19.95</div>
+                <div className="text-gray-600 mb-6 text-lg">per month</div>
                 <button className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 mb-6">
                   Subscribe now!
                 </button>
-                <div className="space-y-2 text-gray-300 text-base">
+                <div className="space-y-2 text-gray-600 text-base">
                   <div className="flex items-center justify-center">
                     <span className="text-[#00BFA6] mr-2">✓</span>
                     Priority access
@@ -234,16 +234,16 @@ export default function SolutionsPage() {
               </div>
 
               {/* Plan 3 mois */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300">
-                <div className="bg-gray-500/20 rounded-full px-4 py-2 inline-block mb-6">
-                  <span className="text-white font-semibold">3 months</span>
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300">
+                <div className="bg-gray-100 rounded-full px-4 py-2 inline-block mb-6">
+                  <span className="text-gray-700 font-semibold">3 months</span>
                 </div>
-                <div className="text-4xl font-bold text-white mb-2">€16.65</div>
-                <div className="text-gray-300 mb-6 text-lg">per month</div>
+                <div className="text-4xl font-bold text-gray-900 mb-2">€16.65</div>
+                <div className="text-gray-600 mb-6 text-lg">per month</div>
                 <button className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 mb-6">
                   Subscribe now!
                 </button>
-                <div className="space-y-2 text-gray-300 text-base">
+                <div className="space-y-2 text-gray-600 text-base">
                   <div className="flex items-center justify-center">
                     <span className="text-[#00BFA6] mr-2">✓</span>
                     Priority access
@@ -262,7 +262,7 @@ export default function SolutionsPage() {
                   </div>
                 </div>
               </div>
-            </div>
+                </div>
           </div>
         </section>
 

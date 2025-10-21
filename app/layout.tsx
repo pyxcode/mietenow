@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
+import { LanguageProvider } from '@/contexts/LanguageContext'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -89,7 +91,11 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={`${inter.className} antialiased`}>
-        {children}
+        <LanguageProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   )

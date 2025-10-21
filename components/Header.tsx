@@ -5,11 +5,14 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X, Globe } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useAuth } from '@/contexts/AuthContext'
+import UserDropdown from './UserDropdown'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const { language, changeLanguage, t } = useTranslation()
+  const { user, loading } = useAuth()
 
   const navigation = [
     { name: t('nav.rent'), href: '/mieten' },
@@ -18,7 +21,7 @@ export default function Header() {
   ]
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
+    <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-[2000]">
       <div className="container-custom">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
@@ -51,9 +54,9 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-                className="flex items-center space-x-2 text-gray-600 hover:text-mineral transition-colors"
+                className="flex items-center space-x-2 text-gray-600 hover:text-mineral transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-lg"
               >
-                <Globe className="w-4 h-4" />
+                <span className="text-lg">{language === 'de' ? '🇩🇪' : '🇬🇧'}</span>
                 <span className="text-sm font-medium">{language.toUpperCase()}</span>
               </button>
               
@@ -85,12 +88,18 @@ export default function Header() {
               )}
             </div>
 
-            <Link href="/login" className="text-gray-600 hover:text-mineral transition-colors">
-              {t('nav.login')}
-            </Link>
-            <Link href="/signup" className="btn-primary">
-              {t('nav.signup')}
-            </Link>
+            {loading ? (
+              <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+            ) : user ? (
+              <UserDropdown />
+            ) : (
+              <Link 
+                href="/login" 
+                className="bg-[#00BFA6] hover:bg-[#00A693] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+              >
+                {t('nav.login')}
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -145,20 +154,21 @@ export default function Header() {
                   </button>
                 </div>
                 
-                <Link
-                  href="/login"
-                  className="block w-full text-center py-2 text-gray-600 hover:text-mineral transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('nav.login')}
-                </Link>
-                <Link
-                  href="/signup"
-                  className="block w-full text-center btn-primary"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('nav.signup')}
-                </Link>
+                {loading ? (
+                  <div className="w-full h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+                ) : user ? (
+                  <div className="flex justify-center">
+                    <UserDropdown />
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="block w-full text-center bg-[#00BFA6] hover:bg-[#00A693] text-white py-2 rounded-lg font-medium transition-colors duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('nav.login')}
+                  </Link>
+                )}
               </div>
             </nav>
           </div>

@@ -1,121 +1,162 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
-import { useTranslation } from '@/hooks/useTranslation'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { ChevronLeft, Mail, Lock } from 'lucide-react'
+import Link from 'next/link'
+import Image from 'next/image'
+import SimpleHeader from '@/components/SimpleHeader'
 
 export default function LoginPage() {
-  const { t } = useTranslation()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const { language } = useLanguage()
+  const { login, user } = useAuth()
   const router = useRouter()
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Rediriger si déjà connecté
+  useEffect(() => {
+    if (user) {
+      router.push('/search')
+    }
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+    setLoading(true)
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        // Stocker le token
-        localStorage.setItem('token', data.token)
-        router.push('/dashboard')
-      } else {
-        setError(data.error || 'Erreur de connexion')
-      }
-    } catch (err) {
-      setError('Erreur de connexion')
-    } finally {
-      setLoading(false)
+    const result = await login(formData.email, formData.password)
+    
+    if (result.success) {
+      // Rediriger vers la page de recherche après connexion
+      router.push('/search')
+    } else {
+      setError(result.error || (language === 'de' ? 'Ein Fehler ist aufgetreten' : 'An error occurred'))
     }
+    
+    setLoading(false)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative">
+      <SimpleHeader />
       
-      <main className="container-custom py-16">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Connexion</h1>
-              <p className="text-gray-600">Accédez à votre compte MieteNow</p>
-            </div>
+      {/* Background Image */}
+      <div className="absolute -bottom-[340px] left-0 right-0 z-5">
+        <img 
+          src="/Logos/berlin.png" 
+          alt="Berlin" 
+          className="w-full h-auto opacity-10"
+        />
+      </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-                  {error}
-                </div>
-              )}
+      {/* Main Content */}
+      <div className="flex items-center justify-center px-4 py-16">
+        <div className="max-w-2xl w-full">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
+              {language === 'de' 
+                ? 'Willkommen zurück!'
+                : 'Welcome back!'
+              }
+            </h1>
+            <p className="text-base md:text-lg text-gray-300 leading-relaxed">
+              {language === 'de' 
+                ? 'Melde dich in deinem Konto an, um deine Wohnungssuche fortzusetzen.'
+                : 'Sign in to your account to continue your apartment search.'
+              }
+            </p>
+          </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 space-y-4">
+            {/* Email */}
+            <div>
+              <label className="block text-white text-base font-semibold mb-2">
+                {language === 'de' ? 'E-Mail' : 'E-mail'}
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-mineral focus:border-transparent"
-                  placeholder="votre@email.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-white/20 bg-white/5 text-white placeholder-gray-400 focus:border-mineral focus:outline-none transition-colors text-sm"
                   required
                 />
               </div>
+            </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Mot de passe
-                </label>
+            {/* Password */}
+            <div>
+              <label className="block text-white text-base font-semibold mb-2">
+                {language === 'de' ? 'Passwort' : 'Password'}
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-mineral focus:border-transparent"
-                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  placeholder={language === 'de' ? 'Passwort' : 'Password'}
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-white/20 bg-white/5 text-white placeholder-gray-400 focus:border-mineral focus:outline-none transition-colors text-sm"
                   required
                 />
               </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Connexion...' : 'Se connecter'}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
-                Pas encore de compte ?{' '}
-                <Link href="/signup" className="text-mineral hover:text-dark-blue font-medium">
-                  S'inscrire
-                </Link>
-              </p>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#00BFA6] hover:bg-[#00BFA6]/90 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold text-base transition-colors flex items-center justify-center"
+            >
+              {loading 
+                ? (language === 'de' ? 'Wird angemeldet...' : 'Signing in...')
+                : (language === 'de' ? 'Anmelden' : 'Sign In')
+              }
+            </button>
+          </form>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center mt-6">
+            <Link 
+              href="/"
+              className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-sm">{language === 'de' ? 'Zurück' : 'Back'}</span>
+            </Link>
+            
+            <Link 
+              href="/signup"
+              className="text-[#00BFA6] hover:text-[#00BFA6]/80 transition-colors text-sm font-medium"
+            >
+              {language === 'de' ? 'Noch kein Konto? Jetzt registrieren' : "Don't have an account? Sign up now"}
+            </Link>
           </div>
         </div>
-      </main>
-
-      <Footer />
+      </div>
     </div>
   )
 }

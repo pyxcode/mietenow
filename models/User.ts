@@ -1,116 +1,111 @@
 import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IUser extends Document {
-  firstName: string
-  lastName: string
+  _id: mongoose.Types.ObjectId
+  first_name: string
+  last_name: string
   email: string
-  password: string
-  address?: string
-  phone?: string
-  isActive: boolean
-  subscription?: {
-    plan: 'free' | 'pro' | 'premium'
-    status: 'active' | 'inactive' | 'cancelled'
-    startDate: Date
-    endDate?: Date
-  }
-  searchCriteria?: {
+  password_hash: string
+  plan: 'Free' | 'Premium' | 'Pro'
+  subscription_status: 'active' | 'expired' | 'canceled'
+  search_preferences: {
     city: string
-    minPrice?: number
-    maxPrice?: number
-    minRooms?: number
-    maxRooms?: number
-    minBedrooms?: number
-    maxBedrooms?: number
-    minSize?: number
-    maxSize?: number
-    propertyType?: string[]
-    furnishing?: string[]
-    districts?: string[]
+    max_price: number
+    type: string
+    surface_min: number
   }
-  createdAt: Date
-  updatedAt: Date
+  created_at: Date
+  last_login: Date
 }
 
 const UserSchema = new Schema<IUser>({
-  firstName: {
+  first_name: {
     type: String,
-    required: [true, 'First name is required'],
+    required: true,
     trim: true,
-    maxlength: [50, 'First name cannot be more than 50 characters']
+    maxlength: 50
   },
-  lastName: {
+  last_name: {
     type: String,
-    required: [true, 'Last name is required'],
+    required: true,
     trim: true,
-    maxlength: [50, 'Last name cannot be more than 50 characters']
+    maxlength: 50
   },
   email: {
     type: String,
-    required: [true, 'Email is required'],
+    required: true,
     unique: true,
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
-  password: {
+  password_hash: {
     type: String,
-    required: [true, 'Password is required'],
-    minlength: [6, 'Password must be at least 6 characters']
+    required: true,
+    minlength: 6
   },
-  address: {
+  plan: {
     type: String,
-    trim: true
+    enum: ['Free', 'Premium', 'Pro'],
+    default: 'Free'
   },
-  phone: {
+  subscription_status: {
     type: String,
-    trim: true
+    enum: ['active', 'expired', 'canceled'],
+    default: 'active'
   },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  subscription: {
-    plan: {
-      type: String,
-      enum: ['free', 'pro', 'premium'],
-      default: 'free'
-    },
-    status: {
-      type: String,
-      enum: ['active', 'inactive', 'cancelled'],
-      default: 'inactive'
-    },
-    startDate: {
-      type: Date,
-      default: Date.now
-    },
-    endDate: Date
-  },
-  searchCriteria: {
+  search_preferences: {
     city: {
       type: String,
-      default: 'Berlin'
+      default: 'Berlin',
+      trim: true
     },
-    minPrice: Number,
-    maxPrice: Number,
-    minRooms: Number,
-    maxRooms: Number,
-    minBedrooms: Number,
-    maxBedrooms: Number,
-    minSize: Number,
-    maxSize: Number,
-    propertyType: [String],
-    furnishing: [String],
-    districts: [String]
+    max_price: {
+      type: Number,
+      default: 1500,
+      min: 0
+    },
+    type: {
+      type: String,
+      default: 'apartment',
+      enum: ['studio', 'apartment', 'WG', 'house']
+    },
+    surface_min: {
+      type: Number,
+      default: 30,
+      min: 0
+    }
+  },
+  created_at: {
+    type: Date,
+    default: Date.now
+  },
+  last_login: {
+    type: Date,
+    default: Date.now
   }
 }, {
-  timestamps: true
+  timestamps: true // Ajoute automatiquement createdAt et updatedAt
 })
 
-// Index pour les recherches fréquentes
+// Index pour optimiser les recherches
 UserSchema.index({ email: 1 })
-UserSchema.index({ 'subscription.status': 1 })
-UserSchema.index({ 'searchCriteria.city': 1 })
+UserSchema.index({ plan: 1 })
+UserSchema.index({ subscription_status: 1 })
+
+// Méthode virtuelle pour le nom complet
+UserSchema.virtual('full_name').get(function() {
+  return `${this.first_name} ${this.last_name}`
+})
+
+// Méthode pour vérifier si l'utilisateur a un plan payant
+UserSchema.methods.hasPaidPlan = function() {
+  return this.plan !== 'Free'
+}
+
+// Méthode pour vérifier si l'abonnement est actif
+UserSchema.methods.isSubscriptionActive = function() {
+  return this.subscription_status === 'active'
+}
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema)

@@ -1,49 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server'
-import dbConnect from '@/lib/mongodb'
-import User from '@/models/User'
-import { generateToken } from '@/lib/auth'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import connectDB from '@/lib/mongodb'
+import { User } from '@/models'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function POST(req: NextRequest) {
   try {
-    await dbConnect()
-
     const { email, password } = await req.json()
 
+    // Validation des données
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Email et mot de passe requis' },
+        { status: 400 }
+      )
     }
 
-    // Trouver l'utilisateur avec le mot de passe
-    const user = await User.findOne({ email }).select('+password')
-    
+    // Connexion à la base de données
+    await connectDB()
+
+    // Trouver l'utilisateur par email
+    const user = await User.findOne({ email: email.toLowerCase() })
     if (!user) {
-      return NextResponse.json({ error: 'Email ou mot de passe incorrect' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Email ou mot de passe incorrect' },
+        { status: 401 }
+      )
     }
 
     // Vérifier le mot de passe
-    const isPasswordValid = await user.comparePassword(password)
-    
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash)
     if (!isPasswordValid) {
-      return NextResponse.json({ error: 'Email ou mot de passe incorrect' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Email ou mot de passe incorrect' },
+        { status: 401 }
+      )
     }
 
-    // Générer le token JWT
-    const token = generateToken(user)
+    // Mettre à jour la dernière connexion
+    user.last_login = new Date()
+    await user.save()
 
+    // Créer le token JWT
+    const token = jwt.sign(
+      { 
+        userId: user._id,
+        email: user.email,
+        plan: user.plan
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    )
+
+    // Retourner la réponse sans le mot de passe
     return NextResponse.json({
       success: true,
-      token,
+      message: 'Connexion réussie',
       user: {
         id: user._id,
+        firstName: user.first_name,
+        lastName: user.last_name,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        isSubscribed: user.isSubscribed
-      }
+        plan: user.plan,
+        subscriptionStatus: user.subscription_status
+      },
+      token
     })
 
   } catch (error: any) {
-    console.error('Login error:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    console.error('Erreur lors de la connexion:', error)
+    return NextResponse.json(
+      { error: 'Erreur serveur lors de la connexion' },
+      { status: 500 }
+    )
   }
 }

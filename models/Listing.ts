@@ -1,220 +1,184 @@
 import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IListing extends Document {
+  _id: mongoose.Types.ObjectId
   title: string
   description: string
   price: number
-  currency: string
   location: string
-  city: string
-  district?: string
-  address?: string
+  district: string
+  surface: number
   rooms: number
-  bedrooms: number
-  size: number
-  propertyType: string // 'apartment', 'house', 'room', 'studio'
-  furnishing: string // 'furnished', 'unfurnished', 'partially_furnished'
+  type: 'studio' | 'apartment' | 'WG' | 'house'
   images: string[]
-  url: string
-  source: string
-  sourceId: string
-  publishedAt: Date
-  updatedAt: Date
-  lastChecked: Date
-  isActive: boolean
-  isAvailable: boolean
-  features: string[]
-  contactInfo?: {
-    name?: string
-    phone?: string
-    email?: string
-  }
-  coordinates?: {
-    lat: number
-    lng: number
-  }
-  energyRating?: string
-  deposit?: number
-  utilities?: number
-  availableFrom?: Date
+  url_source: string
+  source_name: string
+  scraped_at: Date
+  is_active: boolean
+  available_from: Date
+  owner_id?: mongoose.Types.ObjectId
+  created_at: Date
 }
 
 const ListingSchema = new Schema<IListing>({
   title: {
     type: String,
-    required: [true, 'Title is required'],
+    required: true,
     trim: true,
-    maxlength: [200, 'Title cannot be more than 200 characters']
+    maxlength: 200
   },
   description: {
     type: String,
-    required: [true, 'Description is required'],
-    trim: true
+    required: true,
+    trim: true,
+    maxlength: 2000
   },
   price: {
     type: Number,
-    required: [true, 'Price is required'],
-    min: [0, 'Price cannot be negative']
-  },
-  currency: {
-    type: String,
-    default: 'EUR',
-    enum: ['EUR', 'USD', 'CHF']
+    required: true,
+    min: 0
   },
   location: {
     type: String,
-    required: [true, 'Location is required'],
-    trim: true
-  },
-  city: {
-    type: String,
-    required: [true, 'City is required'],
-    trim: true
+    required: true,
+    trim: true,
+    maxlength: 100
   },
   district: {
     type: String,
-    trim: true
+    required: true,
+    trim: true,
+    maxlength: 50
   },
-  address: {
-    type: String,
-    trim: true
+  surface: {
+    type: Number,
+    required: true,
+    min: 0
   },
   rooms: {
     type: Number,
-    required: [true, 'Number of rooms is required'],
-    min: [1, 'Must have at least 1 room']
+    required: true,
+    min: 0
   },
-  bedrooms: {
-    type: Number,
-    required: [true, 'Number of bedrooms is required'],
-    min: [0, 'Bedrooms cannot be negative']
-  },
-  size: {
-    type: Number,
-    required: [true, 'Size is required'],
-    min: [1, 'Size must be at least 1 m²']
-  },
-  propertyType: {
+  type: {
     type: String,
-    required: [true, 'Property type is required'],
-    enum: ['apartment', 'house', 'room', 'studio', 'loft', 'penthouse']
-  },
-  furnishing: {
-    type: String,
-    required: [true, 'Furnishing status is required'],
-    enum: ['furnished', 'unfurnished', 'partially_furnished']
+    required: true,
+    enum: ['studio', 'apartment', 'WG', 'house']
   },
   images: [{
     type: String,
     validate: {
       validator: function(v: string) {
-        return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(v)
+        return /^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i.test(v)
       },
-      message: 'Invalid image URL'
+      message: 'Images must be valid URLs with image extensions'
     }
   }],
-  url: {
+  url_source: {
     type: String,
-    required: [true, 'URL is required'],
-    unique: true
+    required: true,
+    validate: {
+      validator: function(v: string) {
+        return /^https?:\/\/.+/.test(v)
+      },
+      message: 'Source URL must be a valid HTTP/HTTPS URL'
+    }
   },
-  source: {
+  source_name: {
     type: String,
-    required: [true, 'Source is required'],
-    enum: ['WG-Gesucht', 'Immowelt', 'ImmoScout24', 'Nestpick', 'Wunderflats']
+    required: true,
+    trim: true,
+    maxlength: 50
   },
-  sourceId: {
-    type: String,
-    required: [true, 'Source ID is required']
-  },
-  publishedAt: {
-    type: Date,
-    required: [true, 'Published date is required']
-  },
-  updatedAt: {
+  scraped_at: {
     type: Date,
     default: Date.now
   },
-  lastChecked: {
+  is_active: {
+    type: Boolean,
+    default: true
+  },
+  available_from: {
+    type: Date,
+    required: true
+  },
+  owner_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  created_at: {
     type: Date,
     default: Date.now
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  isAvailable: {
-    type: Boolean,
-    default: true
-  },
-  features: [{
-    type: String,
-    trim: true
-  }],
-  contactInfo: {
-    name: String,
-    phone: String,
-    email: {
-      type: String,
-      validate: {
-        validator: function(v: string) {
-          return !v || /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v)
-        },
-        message: 'Invalid email format'
-      }
-    }
-  },
-  coordinates: {
-    lat: {
-      type: Number,
-      min: -90,
-      max: 90
-    },
-    lng: {
-      type: Number,
-      min: -180,
-      max: 180
-    }
-  },
-  energyRating: {
-    type: String,
-    enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-  },
-  deposit: {
-    type: Number,
-    min: [0, 'Deposit cannot be negative']
-  },
-  utilities: {
-    type: Number,
-    min: [0, 'Utilities cannot be negative']
-  },
-  availableFrom: Date
+  }
 }, {
   timestamps: true
 })
 
-// Index pour les recherches optimisées
-ListingSchema.index({ city: 1, isActive: 1, isAvailable: 1 })
+// Index pour optimiser les recherches
+ListingSchema.index({ location: 1 })
+ListingSchema.index({ district: 1 })
 ListingSchema.index({ price: 1 })
-ListingSchema.index({ rooms: 1, bedrooms: 1 })
-ListingSchema.index({ size: 1 })
-ListingSchema.index({ propertyType: 1 })
-ListingSchema.index({ furnishing: 1 })
-ListingSchema.index({ source: 1, sourceId: 1 })
-ListingSchema.index({ publishedAt: -1 })
-ListingSchema.index({ lastChecked: 1 })
+ListingSchema.index({ type: 1 })
+ListingSchema.index({ is_active: 1 })
+ListingSchema.index({ available_from: 1 })
+ListingSchema.index({ created_at: -1 })
 
 // Index composé pour les recherches complexes
 ListingSchema.index({ 
-  city: 1, 
+  location: 1, 
+  type: 1, 
   price: 1, 
-  rooms: 1, 
-  bedrooms: 1, 
-  size: 1, 
-  propertyType: 1, 
-  furnishing: 1,
-  isActive: 1,
-  isAvailable: 1
+  is_active: 1 
 })
+
+// Méthode virtuelle pour le prix par m²
+ListingSchema.virtual('price_per_sqm').get(function() {
+  return this.surface > 0 ? Math.round(this.price / this.surface) : 0
+})
+
+// Méthode pour vérifier si l'annonce est récente (moins de 7 jours)
+ListingSchema.methods.isRecent = function() {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  return this.created_at > sevenDaysAgo
+}
+
+// Méthode pour vérifier si l'annonce est disponible
+ListingSchema.methods.isAvailable = function() {
+  return this.is_active && this.available_from <= new Date()
+}
+
+// Méthode statique pour rechercher des annonces
+ListingSchema.statics.findByCriteria = function(criteria: {
+  location?: string
+  type?: string
+  maxPrice?: number
+  minSurface?: number
+  district?: string
+}) {
+  const query: any = { is_active: true }
+  
+  if (criteria.location) {
+    query.location = new RegExp(criteria.location, 'i')
+  }
+  
+  if (criteria.district) {
+    query.district = new RegExp(criteria.district, 'i')
+  }
+  
+  if (criteria.type) {
+    query.type = criteria.type
+  }
+  
+  if (criteria.maxPrice) {
+    query.price = { $lte: criteria.maxPrice }
+  }
+  
+  if (criteria.minSurface) {
+    query.surface = { $gte: criteria.minSurface }
+  }
+  
+  return this.find(query).sort({ created_at: -1 })
+}
 
 export default mongoose.models.Listing || mongoose.model<IListing>('Listing', ListingSchema)

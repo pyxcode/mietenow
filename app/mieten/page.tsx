@@ -3,6 +3,7 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useState } from 'react'
 
@@ -143,9 +144,9 @@ export default function MietenPage() {
                       />
                     </div>
                     
-                    <button className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors duration-200">
+                    <Link href="/criteria" className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors duration-200 text-center block">
                       {language === 'de' ? 'Suchen starten' : 'Start searching'}
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

@@ -6,9 +6,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Search, MapPin } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function HomePage() {
   const { t, language } = useTranslation()
+  const { user } = useAuth()
   
   return (
     <main className="min-h-screen">
@@ -63,10 +65,10 @@ export default function HomePage() {
 
               {/* Bouton Recherche */}
               <div className="flex items-end">
-                <button className="w-full bg-[#004AAD] hover:bg-[#002E73] text-white px-6 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2">
+                <Link href={user ? "/search" : "/criteria"} className="w-full bg-[#004AAD] hover:bg-[#002E73] text-white px-6 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2">
                   <Search className="w-5 h-5" />
                   {t('home.hero.searchButton')}
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -267,7 +269,7 @@ export default function HomePage() {
               {language === 'de' ? 'Schließen Sie sich Tausenden von Expats, Studenten und Fachkräften an, die ihre Wohnung mit mietenow gefunden haben.' : 'Join thousands of expats, students, and professionals who found their home with mietenow.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/signup" className="bg-[#00BFA6] hover:bg-[#002E73] text-[#FAFAFB] px-6 py-3 rounded-lg text-lg font-semibold transition-colors" style={{ fontFamily: 'Inter, sans-serif' }}>
+              <Link href="/mieten" className="bg-[#00BFA6] hover:bg-[#002E73] text-[#FAFAFB] px-6 py-3 rounded-lg text-lg font-semibold transition-colors" style={{ fontFamily: 'Inter, sans-serif' }}>
                 {language === 'de' ? 'Jetzt suchen' : 'Search now'}
               </Link>
               <Link href="/solutions" className="bg-transparent border-2 border-[#FAFAFB] text-[#FAFAFB] hover:bg-[#FAFAFB] hover:text-[#002E73] px-6 py-3 rounded-lg text-lg font-semibold transition-colors" style={{ fontFamily: 'Inter, sans-serif' }}>
