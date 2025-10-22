@@ -251,9 +251,17 @@ export default function HomePage() {
                 </div>
                 
 
-                <Link href="mailto:hello@mietenow.de" className="bg-[#00BFA6] hover:bg-[#002E73] text-[#FAFAFB] px-6 py-3 rounded-lg text-lg font-semibold transition-colors whitespace-nowrap" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <button 
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.$crisp) {
+                      window.$crisp.push(['do', 'chat:open'])
+                    }
+                  }}
+                  className="bg-[#00BFA6] hover:bg-[#002E73] text-[#FAFAFB] px-6 py-3 rounded-lg text-lg font-semibold transition-colors whitespace-nowrap" 
+                  style={{ fontFamily: 'Inter, sans-serif' }}
+                >
                   {language === 'de' ? 'Hilfe erhalten' : 'Get help'}
-                </Link>
+                </button>
               </div>
             </div>
           </div>
