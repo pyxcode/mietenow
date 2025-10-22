@@ -7,10 +7,32 @@ import Link from 'next/link'
 import { Search, MapPin } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useState } from 'react'
+import PlanModal from '@/components/PlanModal'
 
 export default function HomePage() {
   const { t, language } = useTranslation()
   const { user } = useAuth()
+  const [showPlanModal, setShowPlanModal] = useState(false)
+
+  // Fonction pour gérer le clic sur le bouton de recherche
+  const handleSearchClick = () => {
+    if (!user) {
+      // Si pas connecté, aller vers criteria
+      window.location.href = '/criteria'
+      return
+    }
+
+    // Si connecté, vérifier le plan
+    if (user.plan === 'empty') {
+      // Plan vide, afficher la modal
+      setShowPlanModal(true)
+    } else {
+      // Plan valide, aller au dashboard
+      window.location.href = '/search'
+    }
+  }
+
   
   return (
     <main className="min-h-screen">
@@ -65,13 +87,17 @@ export default function HomePage() {
 
               {/* Bouton Recherche */}
               <div className="flex items-end">
-                <Link href={user ? "/search" : "/criteria"} className="w-full bg-[#004AAD] hover:bg-[#002E73] text-white px-6 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2">
+                <button 
+                  onClick={handleSearchClick}
+                  className="w-full bg-[#004AAD] hover:bg-[#002E73] text-white px-6 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
+                >
                   <Search className="w-5 h-5" />
                   {t('home.hero.searchButton')}
-                </Link>
+                </button>
               </div>
             </div>
           </div>
+
         </div>
 
             {/* Berlin Image at very bottom */}
@@ -288,6 +314,15 @@ export default function HomePage() {
         </section>
         
         <Footer />
+
+        {/* Modal pour sélection de plan */}
+        {showPlanModal && (
+          <PlanModal 
+            isOpen={showPlanModal}
+            onClose={() => setShowPlanModal(false)}
+          />
+        )}
       </main>
     )
   }
+

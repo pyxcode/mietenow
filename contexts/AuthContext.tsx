@@ -92,6 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.ok) {
         localStorage.setItem('authToken', data.token)
+        localStorage.setItem('userId', data.user.id)
         setUser(data.user)
         return { success: true }
       } else {
@@ -117,6 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.ok) {
         localStorage.setItem('authToken', data.token)
+        localStorage.setItem('userId', data.user.id)
         setUser(data.user)
         return { success: true }
       } else {

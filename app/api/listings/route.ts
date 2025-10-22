@@ -1,155 +1,170 @@
 import { NextRequest, NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Listing from '@/models/Listing'
+import { connectDB } from '@/lib/mongodb'
+import mongoose from 'mongoose'
+
+export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
-    await connectDB()
-
+    // Forcer la connexion à mietenow-prod
+    const MONGODB_URI = process.env.MONGODB_URI
+    if (!MONGODB_URI) {
+      return NextResponse.json({ error: 'MONGODB_URI not configured' }, { status: 500 })
+    }
+    
+    // Forcer l'utilisation de mietenow-prod
+    const mongoUri = MONGODB_URI.endsWith('/') 
+      ? MONGODB_URI.slice(0, -1) 
+      : MONGODB_URI
+    const finalUri = `${mongoUri}/mietenow-prod`
+    
+    await mongoose.connect(finalUri)
+    
     const { searchParams } = new URL(request.url)
     
-    // Construire la requête de filtrage
-    const query: any = {
-      isActive: true,
-      isAvailable: true
-    }
-
-    // Filtres de base
-    const city = searchParams.get('city')
-    if (city) {
-      query.city = new RegExp(city, 'i')
-    }
-
-    // Filtres de prix
+    // Paramètres de filtrage
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
+    const minSurface = searchParams.get('minSurface')
+    const maxSurface = searchParams.get('maxSurface')
+    const rooms = searchParams.get('rooms')
+    const type = searchParams.get('type')
+    const district = searchParams.get('district')
+    const furnished = searchParams.get('furnished')
+    const lat = searchParams.get('lat')
+    const lng = searchParams.get('lng')
+    const radius = searchParams.get('radius') || '5000' // 5km par défaut
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    
+    // Utiliser directement la collection MongoDB
+    const db = mongoose.connection.db
+    if (!db) {
+      throw new Error('Database connection not established')
+    }
+    const listingsCollection = db.collection('listings')
+    
+    // Construire la requête MongoDB
+    const query: any = {
+      active: { $ne: false } // Utiliser le champ 'active' au lieu de 'is_active'
+    }
+    
+    // Filtres de prix
     if (minPrice || maxPrice) {
       query.price = {}
       if (minPrice) query.price.$gte = parseInt(minPrice)
       if (maxPrice) query.price.$lte = parseInt(maxPrice)
     }
-
-    // Filtres de pièces
-    const minRooms = searchParams.get('minRooms')
-    const maxRooms = searchParams.get('maxRooms')
-    if (minRooms || maxRooms) {
-      query.rooms = {}
-      if (minRooms) query.rooms.$gte = parseInt(minRooms)
-      if (maxRooms) query.rooms.$lte = parseInt(maxRooms)
-    }
-
-    // Filtres de chambres
-    const minBedrooms = searchParams.get('minBedrooms')
-    const maxBedrooms = searchParams.get('maxBedrooms')
-    if (minBedrooms || maxBedrooms) {
-      query.bedrooms = {}
-      if (minBedrooms) query.bedrooms.$gte = parseInt(minBedrooms)
-      if (maxBedrooms) query.bedrooms.$lte = parseInt(maxBedrooms)
-    }
-
+    
     // Filtres de surface
-    const minSize = searchParams.get('minSize')
-    const maxSize = searchParams.get('maxSize')
-    if (minSize || maxSize) {
-      query.size = {}
-      if (minSize) query.size.$gte = parseInt(minSize)
-      if (maxSize) query.size.$lte = parseInt(maxSize)
+    if (minSurface || maxSurface) {
+      query.surface = {}
+      if (minSurface) query.surface.$gte = parseInt(minSurface)
+      if (maxSurface) query.surface.$lte = parseInt(maxSurface)
     }
-
-    // Filtre de type de propriété
-    const propertyType = searchParams.get('propertyType')
-    if (propertyType) {
-      query.propertyType = propertyType
+    
+    // Filtres de pièces
+    if (rooms) {
+      query.rooms = { $gte: parseInt(rooms) }
     }
-
-    // Filtre d'équipement
-    const furnishing = searchParams.get('furnishing')
-    if (furnishing) {
-      query.furnishing = furnishing
+    
+    // Filtre de type
+    if (type) {
+      query.type = type
     }
-
-    // Filtres de quartiers
-    const districts = searchParams.get('districts')
-    if (districts) {
-      query.district = { $in: districts.split(',') }
+    
+    // Filtre de district
+    if (district) {
+      query.district = district
     }
-
+    
+    // Filtre meublé
+    if (furnished !== null && furnished !== undefined) {
+      query.furnished = furnished === 'true'
+    }
+    
+    // Filtre géographique (si lat/lng fournis)
+    if (lat && lng) {
+      const latNum = parseFloat(lat)
+      const lngNum = parseFloat(lng)
+      const radiusNum = parseInt(radius)
+      
+      // Utiliser l'opérateur géospatial de MongoDB
+      query.$or = [
+        {
+          lat: { $exists: true },
+          lng: { $exists: true },
+          $expr: {
+            $lte: [
+              {
+                $multiply: [
+                  {
+                    $acos: {
+                      $add: [
+                        {
+                          $multiply: [
+                            { $sin: { $multiply: [{ $divide: ['$lat', 180] }, Math.PI] } },
+                            { $sin: { $multiply: [{ $divide: [latNum, 180] }, Math.PI] } }
+                          ]
+                        },
+                        {
+                          $multiply: [
+                            { $cos: { $multiply: [{ $divide: ['$lat', 180] }, Math.PI] } },
+                            { $cos: { $multiply: [{ $divide: [latNum, 180] }, Math.PI] } },
+                            { $cos: { $multiply: [{ $divide: [{ $subtract: ['$lng', lngNum] }, 180] }, Math.PI] } }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  6371 // Rayon de la Terre en km
+                ]
+              },
+              radiusNum / 1000 // Convertir en km
+            ]
+          }
+        },
+        // Fallback pour les annonces sans coordonnées
+        {
+          lat: { $exists: false },
+          lng: { $exists: false }
+        }
+      ]
+    }
+    
     // Pagination
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
-
-    // Tri
-    const sortBy = searchParams.get('sortBy') || 'publishedAt'
-    const sortOrder = searchParams.get('sortOrder') || 'desc'
-    const sort: any = {}
-    sort[sortBy] = sortOrder === 'desc' ? -1 : 1
-
+    
     // Exécuter la requête
     const [listings, total] = await Promise.all([
-      Listing.find(query)
-        .sort(sort)
+      listingsCollection.find(query)
+        .sort({ created_at: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(),
-      Listing.countDocuments(query)
+        .toArray(),
+      listingsCollection.countDocuments(query)
     ])
-
-    // Formater les résultats
-    const formattedListings = listings.map((listing: any) => ({
-      id: listing._id.toString(),
-      title: listing.title,
-      description: listing.description,
-      price: listing.price,
-      currency: listing.currency,
-      location: listing.location,
-      city: listing.city,
-      district: listing.district,
-      rooms: listing.rooms,
-      bedrooms: listing.bedrooms,
-      size: listing.size,
-      propertyType: listing.propertyType,
-      furnishing: listing.furnishing,
-      images: listing.images,
-      url: listing.url,
-      source: listing.source,
-      publishedAt: listing.publishedAt,
-      features: listing.features,
-      contactInfo: listing.contactInfo
-    }))
-
+    
     return NextResponse.json({
       success: true,
-      listings: formattedListings,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      },
-      filters: {
-        city,
-        minPrice,
-        maxPrice,
-        minRooms,
-        maxRooms,
-        minBedrooms,
-        maxBedrooms,
-        minSize,
-        maxSize,
-        propertyType,
-        furnishing,
-        districts
+      data: {
+        listings,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
       }
     })
-
+    
   } catch (error) {
-    console.error('Listings API error:', error)
+    console.error('Error fetching listings:', error)
     
     return NextResponse.json({
       success: false,
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: 'Failed to fetch listings',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }

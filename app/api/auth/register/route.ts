@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 import connectDB from '@/lib/mongodb'
 import { User } from '@/models'
 
 export const runtime = 'nodejs'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET not configured')
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +17,7 @@ export async function POST(req: NextRequest) {
     // Validation des données
     if (!firstName || !lastName || !email || !password) {
       return NextResponse.json(
-        { error: 'Tous les champs sont requis' },
+        { error: 'Your first and last name are required' },
         { status: 400 }
       )
     }
@@ -49,28 +51,21 @@ export async function POST(req: NextRequest) {
       last_name: lastName.trim(),
       email: email.toLowerCase().trim(),
       password_hash: passwordHash,
-      plan: 'Free',
+      plan: 'empty',
       subscription_status: 'active',
       search_preferences: {
         city: 'Berlin',
         max_price: 1500,
-        type: 'apartment',
-        surface_min: 30
+        type: 'Apartment',
+        min_surface: 30
       }
     })
 
     await newUser.save()
 
     // Créer le token JWT
-    const token = jwt.sign(
-      { 
-        userId: newUser._id,
-        email: newUser.email,
-        plan: newUser.plan
-      },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    )
+    const { generateToken } = await import('@/lib/auth')
+    const token = await generateToken(newUser)
 
     // Retourner la réponse sans le mot de passe
     return NextResponse.json({
@@ -88,8 +83,10 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Erreur lors de l\'inscription:', error)
+    console.error('Détails de l\'erreur:', error.message)
+    console.error('Stack trace:', error.stack)
     return NextResponse.json(
-      { error: 'Erreur serveur lors de l\'inscription' },
+      { error: 'Erreur serveur lors de l\'inscription', details: error.message },
       { status: 500 }
     )
   }

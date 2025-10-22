@@ -17,7 +17,9 @@ interface PaymentFormProps {
   onError: (error: string) => void
 }
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_API 
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_API)
+  : null
 
 const CheckoutForm: React.FC<PaymentFormProps> = ({ selectedPlan, onSuccess, onError }) => {
   const stripe = useStripe()
@@ -67,7 +69,13 @@ const CheckoutForm: React.FC<PaymentFormProps> = ({ selectedPlan, onSuccess, onE
           setClientSecret(data.clientSecret)
         } else {
           console.error('No client secret in response:', data)
-          onError(data.error || (language === 'de' ? 'Fehler beim Erstellen des Payment Intents.' : 'Error creating Payment Intent.'))
+          if (data.testMode) {
+            onError(language === 'de' 
+              ? 'Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.' 
+              : 'Stripe is not configured. Please contact the administrator.')
+          } else {
+            onError(data.error || (language === 'de' ? 'Fehler beim Erstellen des Payment Intents.' : 'Error creating Payment Intent.'))
+          }
         }
       } catch (error) {
         console.error('Error fetching client secret:', error)
@@ -121,7 +129,7 @@ const CheckoutForm: React.FC<PaymentFormProps> = ({ selectedPlan, onSuccess, onE
     } else if (paymentIntent) {
       if (paymentIntent.status === 'succeeded') {
         console.log('Payment succeeded:', paymentIntent)
-        setMessage(language === 'de' ? '✅ Zahlung erfolgreich! Weiterleitung...' : '✅ Payment successful! Redirecting...')
+        setMessage(language === 'de' ? '✅ Zahlung erfolgreich! Weiterleitung...' : '✅ Payment succeeded! Redirecting...')
         // Attendre un peu pour que l'utilisateur voie le message de succès
         setTimeout(() => {
           onSuccess()
@@ -232,7 +240,13 @@ const PaymentForm: React.FC<PaymentFormProps> = (props) => {
           if (data.clientSecret) {
             setOptions({ clientSecret: data.clientSecret })
           } else {
-            props.onError(data.error || (language === 'de' ? 'Erreur lors de la création du Payment Intent.' : 'Error creating Payment Intent.'))
+            if (data.testMode) {
+              props.onError(language === 'de' 
+                ? 'Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.' 
+                : 'Stripe is not configured. Please contact the administrator.')
+            } else {
+              props.onError(data.error || (language === 'de' ? 'Erreur lors de la création du Payment Intent.' : 'Error creating Payment Intent.'))
+            }
           }
         })
         .catch((error) => {
@@ -241,6 +255,24 @@ const PaymentForm: React.FC<PaymentFormProps> = (props) => {
         })
     }
   }, [props.selectedPlan, props.onError, language])
+
+  if (!stripePromise) {
+    return (
+      <div className="flex justify-center items-center h-48 bg-white p-6 rounded-lg shadow-lg">
+        <div className="text-center">
+          <p className="text-red-600 font-semibold mb-2">
+            {language === 'de' ? 'Stripe nicht konfiguriert' : 'Stripe not configured'}
+          </p>
+          <p className="text-gray-600 text-sm">
+            {language === 'de' 
+              ? 'Bitte konfigurieren Sie NEXT_PUBLIC_STRIPE_API in Ihrer .env.local Datei'
+              : 'Please configure NEXT_PUBLIC_STRIPE_API in your .env.local file'
+            }
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (!options) {
     return (

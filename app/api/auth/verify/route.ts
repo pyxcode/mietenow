@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
+// JWT import removed - using jose from lib/auth
 import connectDB from '@/lib/mongodb'
 import { User } from '@/models'
 
 export const runtime = 'nodejs'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET not configured')
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,7 +24,8 @@ export async function GET(req: NextRequest) {
     const token = authHeader.substring(7) // Enlever "Bearer "
 
     // Vérifier le token JWT
-    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const { verifyToken } = await import('@/lib/auth')
+    const decoded = await verifyToken(token)
 
     // Connexion à la base de données
     await connectDB()

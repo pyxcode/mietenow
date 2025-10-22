@@ -3,12 +3,17 @@ import mongoose, { Document, Schema } from 'mongoose'
 export interface IAlert extends Document {
   _id: mongoose.Types.ObjectId
   user_id: mongoose.Types.ObjectId
+  email: string
   title: string
   criteria: {
     city: string
     type: string
     max_price: number
-    min_surface: number
+    min_price?: number
+    min_surface?: number
+    max_surface?: number
+    districts?: string[]
+    furnishing?: 'Any' | 'Furnished' | 'Unfurnished'
   }
   frequency: 'hourly' | 'daily'
   last_triggered_at: Date
@@ -21,6 +26,13 @@ const AlertSchema = new Schema<IAlert>({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    trim: true,
+    lowercase: true,
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
   title: {
     type: String,
@@ -38,8 +50,8 @@ const AlertSchema = new Schema<IAlert>({
     type: {
       type: String,
       required: true,
-      enum: ['studio', 'apartment', 'WG', 'house'],
-      default: 'apartment'
+      enum: ['Any', 'Room', 'Studio', 'Apartment', 'House'],
+      default: 'Any'
     },
     max_price: {
       type: Number,
@@ -47,11 +59,29 @@ const AlertSchema = new Schema<IAlert>({
       min: 0,
       max: 10000
     },
+    min_price: {
+      type: Number,
+      min: 0,
+      max: 10000
+    },
     min_surface: {
       type: Number,
-      required: true,
       min: 0,
       max: 500
+    },
+    max_surface: {
+      type: Number,
+      min: 0,
+      max: 500
+    },
+    districts: [{
+      type: String,
+      trim: true
+    }],
+    furnishing: {
+      type: String,
+      enum: ['Any', 'Furnished', 'Unfurnished'],
+      default: 'Any'
     }
   },
   frequency: {

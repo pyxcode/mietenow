@@ -1,20 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { ChevronLeft, Check, Star, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import SimpleHeader from '@/components/SimpleHeader'
 import Footer from '@/components/Footer'
 import PaymentForm from '@/components/PaymentForm'
+import { useSearchParams } from 'next/navigation'
 
 export default function PaymentPage() {
   const { language } = useLanguage()
+  const { user } = useAuth()
+  const searchParams = useSearchParams()
   const [selectedPlan, setSelectedPlan] = useState('1-month')
   const [isOpen, setIsOpen] = useState<number | null>(null)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
+
+  // Récupérer le plan depuis l'URL si présent
+  useEffect(() => {
+    const planFromUrl = searchParams.get('plan')
+    if (planFromUrl) {
+      // Convertir le format de l'URL vers le format attendu
+      const planMapping: { [key: string]: string } = {
+        '2sem': '2-week',
+        '1mois': '1-month', 
+        '3mois': '3-month'
+      }
+      const mappedPlan = planMapping[planFromUrl] || planFromUrl
+      setSelectedPlan(mappedPlan)
+    }
+  }, [searchParams])
 
   const toggleFAQ = (index: number) => {
     setIsOpen(isOpen === index ? null : index)
@@ -118,8 +137,8 @@ export default function PaymentPage() {
         en: "I have another question..."
       },
       answer: {
-        de: "Wenn Sie weitere Fragen haben, zögern Sie nicht, uns über Chat oder E-Mail unter support@mietenow.de zu kontaktieren. Wir helfen Ihnen gerne weiter!",
-        en: "If you have any additional questions, feel free to reach out to us via chat or email at support@mietenow.de. We're always happy to assist!"
+        de: "Wenn Sie weitere Fragen haben, zögern Sie nicht, uns über unseren <a href='#' onclick='window.$crisp.push([\"do\", \"chat:open\"])' class='text-[#00BFA6] hover:underline cursor-pointer'>Live-Chat</a> zu kontaktieren. Wir helfen Ihnen gerne weiter!",
+        en: "If you have any additional questions, feel free to reach out to us via our <a href='#' onclick='window.$crisp.push([\"do\", \"chat:open\"])' class='text-[#00BFA6] hover:underline cursor-pointer'>Live Chat</a>. We're always happy to assist!"
       }
     }
   ]
@@ -135,8 +154,8 @@ export default function PaymentPage() {
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-12 leading-tight">
               {language === 'de' 
-                ? 'Dein nächstes Zuhause wartet!'
-                : 'Your next home is waiting!'
+                ? `Dein nächstes Zuhause wartet${user?.firstName ? ` ${user.firstName}` : ''}`
+                : `Your next home is waiting${user?.firstName ? ` ${user.firstName}` : ''}`
               }
             </h1>
 
@@ -153,7 +172,7 @@ export default function PaymentPage() {
                   />
                 </div>
                 <h3 className="text-white font-bold text-base mb-1">Sarah M.</h3>
-                <p className="text-blue-100 text-xs mb-2">Student, TU Berlin</p>
+                <p className="text-blue-100 text-xs mb-2">Französischlehrerin, TU Berlin</p>
                 <p className="text-gray-300 text-sm italic">
                   "{language === 'de' 
                     ? 'Alle Anzeigen an einem Ort - das war noch nie da! MieteNow hat mir Stunden täglich gespart.'
@@ -174,10 +193,10 @@ export default function PaymentPage() {
                   />
                 </div>
                 <h3 className="text-white font-bold text-base mb-1">Anna K.</h3>
-                <p className="text-blue-100 text-xs mb-2">Chef, Restaurant Amarone</p>
+                <p className="text-blue-100 text-xs mb-2">Köchin, Restaurant Amarone</p>
                 <p className="text-gray-300 text-sm italic">
                   "{language === 'de' 
-                    ? 'Als Koch arbeite ich unregelmäßig - MieteNow hat mir geholfen, die besten Angebote zu finden, auch wenn ich beschäftigt bin.'
+                    ? 'Als Köchin arbeite ich unregelmäßig - MieteNow hat mir geholfen, die besten Angebote zu finden, auch wenn ich beschäftigt bin.'
                     : 'As a chef I work irregular hours - MieteNow helped me find the best deals even when I\'m busy.'
                   }"
                 </p>
@@ -195,7 +214,7 @@ export default function PaymentPage() {
                   />
                 </div>
                 <h3 className="text-white font-bold text-base mb-1">Thomas R.</h3>
-                <p className="text-blue-100 text-xs mb-2">Business Development, University of Applied Sciences</p>
+                <p className="text-blue-100 text-xs mb-2">Business Development, Hochschule für Angewandte Wissenschaften</p>
                 <p className="text-gray-300 text-sm italic">
                   "{language === 'de' 
                     ? 'Die Software ist genial! Statt 20 Websites zu checken, bekomme ich alles in einer App.'
@@ -224,7 +243,7 @@ export default function PaymentPage() {
                     <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
                       <span className="text-white text-xs font-bold">✗</span>
                     </div>
-                    <p className="text-gray-200 text-sm leading-relaxed">{item}</p>
+                    <p className="text-gray-200 text-sm leading-relaxed font-bold">{item}</p>
                   </div>
                 ))}
               </div>
@@ -246,7 +265,7 @@ export default function PaymentPage() {
                     <div className="w-5 h-5 bg-[#00BFA6] rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
                       <Check className="w-3 h-3 text-white" />
                     </div>
-                    <p className="text-white text-sm leading-relaxed font-medium">{item}</p>
+                    <p className="text-white text-sm leading-relaxed font-bold">{item}</p>
                   </div>
                 ))}
               </div>
@@ -441,9 +460,12 @@ export default function PaymentPage() {
                   </button>
                   {isOpen === index && (
                     <div className="px-6 pb-6">
-                      <p className="text-gray-300 text-base md:text-lg leading-relaxed">
-                        {language === 'de' ? faq.answer.de : faq.answer.en}
-                      </p>
+                        <p 
+                          className="text-gray-300 text-base md:text-lg leading-relaxed"
+                          dangerouslySetInnerHTML={{
+                            __html: language === 'de' ? faq.answer.de : faq.answer.en
+                          }}
+                        />
                     </div>
                   )}
                 </div>

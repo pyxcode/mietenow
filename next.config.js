@@ -26,6 +26,36 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  // Configuration pour éviter les erreurs de build avec Puppeteer
+  webpack: (config, { isServer }) => {
+    // Exclure Puppeteer du build client
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        puppeteer: false,
+        'puppeteer-extra': false,
+        'puppeteer-extra-plugin-stealth': false,
+      }
+    }
+    
+    // Configuration pour les modules Node.js
+    config.externals = config.externals || []
+    config.externals.push({
+      puppeteer: 'commonjs puppeteer',
+      'puppeteer-extra': 'commonjs puppeteer-extra',
+      'puppeteer-extra-plugin-stealth': 'commonjs puppeteer-extra-plugin-stealth',
+    })
+    
+    return config
+  },
+  // Configuration expérimentale pour éviter les erreurs
+  experimental: {
+    serverComponentsExternalPackages: ['puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth'],
+  },
 }
 
 module.exports = nextConfig

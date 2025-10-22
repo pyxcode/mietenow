@@ -14,7 +14,6 @@ export default function CriteriaPage() {
     housingType: '',
     furnishing: '',
     minSurface: '',
-    rooms: '',
     bedrooms: ''
   })
 
@@ -32,12 +31,6 @@ export default function CriteriaPage() {
       options: ['Furnished', 'Unfurnished']
     },
     {
-      id: 'rooms',
-      title: language === 'de' ? 'Zimmer' : 'Rooms',
-      subtitle: language === 'de' ? 'Wie viele Zimmer brauchst du?' : 'How many rooms do you need?',
-      options: ['1+', '2+', '3+', '4+']
-    },
-    {
       id: 'bedrooms',
       title: language === 'de' ? 'Schlafzimmer' : 'Bedrooms',
       subtitle: language === 'de' ? 'Wie viele Schlafzimmer?' : 'How many bedrooms?',
@@ -47,17 +40,18 @@ export default function CriteriaPage() {
 
   const handleOptionSelect = (option: string) => {
     const currentStepData = steps[currentStep]
-    setCriteria(prev => ({ ...prev, [currentStepData.id]: option }))
+    const newCriteria = { ...criteria, [currentStepData.id]: option }
+    setCriteria(newCriteria)
     
-    // Auto-advance to next step or go to signup
+    // Auto-advance to next step or go to address page
     if (currentStep < steps.length - 1) {
       setTimeout(() => {
         setCurrentStep(prev => prev + 1)
       }, 300)
     } else {
-      // Last step - go to signup page
+      // Last step - go to address page
       setTimeout(() => {
-        window.location.href = '/signup'
+        window.location.href = '/criteria/address'
       }, 300)
     }
   }
@@ -70,7 +64,6 @@ export default function CriteriaPage() {
     if (criteria.housingType === 'House') base = 20
     
     if (criteria.furnishing === 'Furnished') base = Math.floor(base * 0.7)
-    if (criteria.rooms && parseInt(criteria.rooms) > 2) base = Math.floor(base * 0.6)
     if (criteria.bedrooms && parseInt(criteria.bedrooms) > 2) base = Math.floor(base * 0.7)
     
     return Math.max(base, 5)
@@ -139,11 +132,6 @@ export default function CriteriaPage() {
                   <div className="text-2xl md:text-3xl font-bold text-white mb-2 group-hover:text-mineral transition-colors">
                     {option}
                   </div>
-                  {currentStepData.id === 'rooms' && (
-                    <div className="text-sm text-gray-300">
-                      {language === 'de' ? 'Zimmer' : 'rooms'}
-                    </div>
-                  )}
                   {currentStepData.id === 'bedrooms' && (
                     <div className="text-sm text-gray-300">
                       {language === 'de' ? 'Schlafzimmer' : 'bedrooms'}

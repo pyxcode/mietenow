@@ -18,6 +18,23 @@ export interface IListing extends Document {
   available_from: Date
   owner_id?: mongoose.Types.ObjectId
   created_at: Date
+  
+  // Nouveaux champs pour le scraping
+  hash: string // Hash unique pour déduplication
+  provider: string // 'immoscout', 'wg-gesucht', etc.
+  external_id: string // ID externe du provider
+  lat?: number // Latitude pour la carte
+  lng?: number // Longitude pour la carte
+  address?: string // Adresse complète
+  furnished?: boolean // Meublé ou non
+  features?: string[] // Caractéristiques (balcon, jardin, etc.)
+  
+  // Champs pour le suivi des statuts
+  active?: boolean // Si l'annonce est toujours active
+  status_checked_at?: Date // Dernière vérification du statut
+  status_error?: string // Erreur lors de la vérification
+  last_seen_at?: Date // Dernière fois vue active
+  last_checked: Date // Dernière vérification de disponibilité
 }
 
 const ListingSchema = new Schema<IListing>({
@@ -110,6 +127,66 @@ const ListingSchema = new Schema<IListing>({
   created_at: {
     type: Date,
     default: Date.now
+  },
+  
+  // Nouveaux champs pour le scraping
+  hash: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
+  provider: {
+    type: String,
+    required: true,
+    enum: ['immoscout', 'wg-gesucht', 'immowelt', 'immonet', 'kleinanzeigen'],
+    index: true
+  },
+  external_id: {
+    type: String,
+    required: true
+  },
+  lat: {
+    type: Number,
+    min: -90,
+    max: 90
+  },
+  lng: {
+    type: Number,
+    min: -180,
+    max: 180
+  },
+  address: {
+    type: String,
+    trim: true
+  },
+  furnished: {
+    type: Boolean,
+    default: false
+  },
+  features: [{
+    type: String,
+    trim: true
+  }],
+  last_checked: {
+    type: Date,
+    default: Date.now
+  },
+  
+  // Champs pour le suivi des statuts
+  active: {
+    type: Boolean,
+    default: true
+  },
+  status_checked_at: {
+    type: Date
+  },
+  status_error: {
+    type: String
+  },
+  last_seen_at: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
@@ -123,6 +200,11 @@ ListingSchema.index({ type: 1 })
 ListingSchema.index({ is_active: 1 })
 ListingSchema.index({ available_from: 1 })
 ListingSchema.index({ created_at: -1 })
+ListingSchema.index({ provider: 1 })
+ListingSchema.index({ last_checked: 1 })
+
+// Index géospatial pour la carte
+ListingSchema.index({ lat: 1, lng: 1 })
 
 // Index composé pour les recherches complexes
 ListingSchema.index({ 
@@ -132,6 +214,9 @@ ListingSchema.index({
   is_active: 1 
 })
 
+// Index pour déduplication
+ListingSchema.index({ provider: 1, external_id: 1 }, { unique: true })
+
 // Méthode virtuelle pour le prix par m²
 ListingSchema.virtual('price_per_sqm').get(function() {
   return this.surface > 0 ? Math.round(this.price / this.surface) : 0
@@ -140,7 +225,7 @@ ListingSchema.virtual('price_per_sqm').get(function() {
 // Méthode pour vérifier si l'annonce est récente (moins de 7 jours)
 ListingSchema.methods.isRecent = function() {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  return this.created_at > sevenDaysAgo
+  return this.createdAt > sevenDaysAgo
 }
 
 // Méthode pour vérifier si l'annonce est disponible

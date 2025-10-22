@@ -20,9 +20,18 @@ export default function SignupPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [validationErrors, setValidationErrors] = useState({
+    name: '',
+    email: '',
+    password: ''
+  })
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    // Effacer l'erreur de validation quand l'utilisateur tape
+    if (validationErrors[field as keyof typeof validationErrors]) {
+      setValidationErrors(prev => ({ ...prev, [field]: '' }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +45,7 @@ export default function SignupPage() {
     const lastName = nameParts.slice(1).join(' ') || ''
 
     if (!firstName) {
-      setError(language === 'de' ? 'Bitte geben Sie Ihren Namen ein' : 'Please enter your name')
+      setError(language === 'de' ? 'Bitte geben Sie Ihren vollständigen Namen ein' : 'Your first and last name are required')
       setLoading(false)
       return
     }
@@ -95,8 +104,8 @@ export default function SignupPage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
               {language === 'de' 
-                ? 'Erhalte 160 Matches nächste Woche direkt in deinem Posteingang!'
-                : 'Receive 160 matches next week directly in your inbox!'
+                ? 'Erhalte bis zu 42 Miet-Matches pro Tag direkt in deinem Posteingang!'
+                : 'Receive up to 42 rental matches per day directly in your inbox!'
               }
             </h1>
             <p className="text-base md:text-lg text-gray-300 leading-relaxed">
@@ -112,7 +121,7 @@ export default function SignupPage() {
             {/* Name */}
             <div>
               <label className="block text-white text-base font-semibold mb-2">
-                {language === 'de' ? 'Dein Name' : 'Your name'}
+                {language === 'de' ? 'Dein vollständiger Name' : 'Your full name'}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -120,7 +129,7 @@ export default function SignupPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={language === 'de' ? 'Gib deinen Namen ein' : 'Enter your name'}
+                  placeholder={language === 'de' ? 'Gib deinen vollständigen Namen ein' : 'Enter your full name'}
                   className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-white/20 bg-white/5 text-white placeholder-gray-400 focus:border-mineral focus:outline-none transition-colors text-sm"
                   required
                 />
@@ -178,7 +187,7 @@ export default function SignupPage() {
             >
               {loading 
                 ? (language === 'de' ? 'Konto wird erstellt...' : 'Creating account...')
-                : (language === 'de' ? 'Sende mir alle Matches' : 'Send me all matches')
+                : (language === 'de' ? 'Zeige mir meine Matches' : 'Show me my matches')
               }
             </button>
           </form>

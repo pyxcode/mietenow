@@ -5,13 +5,33 @@ import Footer from '@/components/Footer'
 import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function SolutionsPage() {
   const { language } = useTranslation()
+  const { user, loading } = useAuth()
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState<number | null>(null)
+  const [selectedPlan, setSelectedPlan] = useState<string>('1mois')
 
   const toggleFAQ = (index: number) => {
     setIsOpen(isOpen === index ? null : index)
+  }
+
+  const handlePlanSelection = (plan: string) => {
+    setSelectedPlan(plan)
+  }
+
+  const handleActivatePlan = () => {
+    if (!user) {
+      // Si l'utilisateur n'est pas connecté, rediriger vers la création de compte
+      router.push('/signup')
+      return
+    }
+    
+    // Si l'utilisateur est connecté, rediriger directement vers la page de paiement avec le plan sélectionné
+    router.push(`/payment?plan=${selectedPlan}`)
   }
 
   const faqs = [
@@ -71,8 +91,8 @@ export default function SolutionsPage() {
         en: "I have another question..."
       },
       answer: {
-        de: "Wenn Sie weitere Fragen haben, zögern Sie nicht, uns über Chat oder E-Mail unter support@mietenow.de zu kontaktieren. Wir helfen Ihnen gerne weiter!",
-        en: "If you have any additional questions, feel free to reach out to us via chat or email at support@mietenow.de. We're always happy to assist!"
+        de: "Wenn Sie weitere Fragen haben, zögern Sie nicht, uns über unseren <a href='#' onclick='window.$crisp.push([\"do\", \"chat:open\"])' class='text-[#00BFA6] hover:underline cursor-pointer'>Live-Chat</a> zu kontaktieren. Wir helfen Ihnen gerne weiter!",
+        en: "If you have any additional questions, feel free to reach out to us via our <a href='#' onclick='window.$crisp.push([\"do\", \"chat:open\"])' class='text-[#00BFA6] hover:underline cursor-pointer'>Live Chat</a>. We're always happy to assist!"
       }
     }
   ]
@@ -152,117 +172,155 @@ export default function SolutionsPage() {
         </section>
 
 
-        {/* Section Pricing - Plus lisible */}
+        {/* Section Pricing - Nouveau design */}
         <section className="bg-white py-16">
           <div className="container-custom">
-                <div className="text-center mb-12">
-                  <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                    {language === 'de' ? 'Pläne' : 'Plans'}
-                  </h2>
-                  <p className="text-2xl text-gray-600">
-                    {language === 'de' 
-                      ? 'Wählen Sie den Plan, der zu Ihnen passt'
-                      : 'Choose the plan that fits you'
-                    }
-                  </p>
+            <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                {language === 'de' ? 'Wählen Sie den Plan, der zu Ihnen passt' : 'Choose the plan that\'s right for you'}
+              </h2>
+              <p className="text-xl text-gray-600 mb-8">
+                {language === 'de' 
+                  ? 'Flexible Pläne, die sich an Ihre Suchzeit anpassen. Jederzeit kündbar.'
+                  : 'Flexible plans that adapt to your search timeline. Cancel anytime.'
+                }
+              </p>
+            </div>
+            
+            <div className="max-w-2xl mx-auto mb-8">
+              {/* Plan 2 semaines */}
+              <div 
+                className={`border rounded-xl p-6 mb-4 cursor-pointer transition-all duration-200 ${
+                  selectedPlan === '2sem' 
+                    ? 'border-[#00BFA6] bg-white' 
+                    : 'border-gray-200 hover:border-gray-300 bg-gray-50'
+                }`}
+                onClick={() => handlePlanSelection('2sem')}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
+                      selectedPlan === '2sem' 
+                        ? 'border-[#00BFA6] bg-[#00BFA6]' 
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedPlan === '2sem' && <div className="w-3 h-3 bg-white rounded-full"></div>}
+                    </div>
+                    <span className="text-gray-900 font-semibold text-lg">
+                      {language === 'de' ? '2-Wochen-Plan' : '2-week plan'}
+                    </span>
+                  </div>
+                  <span className="text-gray-900 font-bold text-2xl">€26</span>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {/* Plan 1 mois */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300">
-                <div className="bg-gray-100 rounded-full px-4 py-2 inline-block mb-6">
-                  <span className="text-gray-700 font-semibold">1 month</span>
-                </div>
-                <div className="text-4xl font-bold text-gray-900 mb-2">€29.95</div>
-                <div className="text-gray-600 mb-6 text-lg">per month</div>
-                <button className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 mb-6">
-                  Subscribe now!
-                </button>
-                <div className="space-y-2 text-gray-600 text-base">
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Priority access
+              </div>
+              
+              {/* Plan 1 mois - Recommandé */}
+              <div 
+                className={`border rounded-xl p-6 mb-4 cursor-pointer transition-all duration-200 ${
+                  selectedPlan === '1mois' 
+                    ? 'border-[#00BFA6] bg-white' 
+                    : 'border-gray-200 hover:border-gray-300 bg-gray-50'
+                }`}
+                onClick={() => handlePlanSelection('1mois')}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
+                      selectedPlan === '1mois' 
+                        ? 'border-[#00BFA6] bg-[#00BFA6]' 
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedPlan === '1mois' && <div className="w-3 h-3 bg-white rounded-full"></div>}
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-900 font-semibold text-lg mr-3">
+                        {language === 'de' ? '1-Monats-Plan' : '1-month plan'}
+                      </span>
+                      <span className="bg-[#00BFA6] text-white text-sm px-3 py-1 rounded-full font-medium">
+                        {language === 'de' ? 'Beliebteste' : 'Most Popular'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Customized alerts
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    More filters
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Premium support
+                  <div className="text-right">
+                    <div className="text-green-600 text-base font-medium">
+                      {language === 'de' ? '33% sparen' : 'Save 33%'}
+                    </div>
+                    <span className="text-gray-900 font-bold text-2xl">€34</span>
                   </div>
                 </div>
               </div>
-
-              {/* Plan 2 mois - Recommandé */}
-              <div className="bg-white border-2 border-[#00BFA6] rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300 relative">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-[#00BFA6] text-white px-4 py-1 rounded-full text-sm font-semibold">
-                    {language === 'de' ? 'Empfohlen' : 'Recommended'}
-                  </span>
-                </div>
-                <div className="bg-[#00BFA6] rounded-full px-4 py-2 inline-block mb-6">
-                  <span className="text-white font-semibold">2 months</span>
-                </div>
-                <div className="text-4xl font-bold text-gray-900 mb-2">€19.95</div>
-                <div className="text-gray-600 mb-6 text-lg">per month</div>
-                <button className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 mb-6">
-                  Subscribe now!
-                </button>
-                <div className="space-y-2 text-gray-600 text-base">
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Priority access
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Customized alerts
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    More filters
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Premium support
-                  </div>
-                </div>
-              </div>
-
+              
               {/* Plan 3 mois */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center hover:shadow-lg transition-all duration-300">
-                <div className="bg-gray-100 rounded-full px-4 py-2 inline-block mb-6">
-                  <span className="text-gray-700 font-semibold">3 months</span>
-                </div>
-                <div className="text-4xl font-bold text-gray-900 mb-2">€16.65</div>
-                <div className="text-gray-600 mb-6 text-lg">per month</div>
-                <button className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 mb-6">
-                  Subscribe now!
-                </button>
-                <div className="space-y-2 text-gray-600 text-base">
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Priority access
+              <div 
+                className={`border rounded-xl p-6 mb-4 cursor-pointer transition-all duration-200 ${
+                  selectedPlan === '3mois' 
+                    ? 'border-[#00BFA6] bg-white' 
+                    : 'border-gray-200 hover:border-gray-300 bg-gray-50'
+                }`}
+                onClick={() => handlePlanSelection('3mois')}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
+                      selectedPlan === '3mois' 
+                        ? 'border-[#00BFA6] bg-[#00BFA6]' 
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedPlan === '3mois' && <div className="w-3 h-3 bg-white rounded-full"></div>}
+                    </div>
+                    <span className="text-gray-900 font-semibold text-lg">
+                      {language === 'de' ? '3-Monats-Plan' : '3-month plan'}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Customized alerts
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    More filters
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[#00BFA6] mr-2">✓</span>
-                    Premium support
+                  <div className="text-right">
+                    <div className="text-green-600 text-base font-medium">
+                      {language === 'de' ? '44% sparen' : 'Save 44%'}
+                    </div>
+                    <span className="text-gray-900 font-bold text-2xl">€68</span>
                   </div>
                 </div>
               </div>
+            </div>
+            
+            <div className="text-center mb-6 relative z-10">
+              <div className="flex justify-center">
+                <button 
+                  onClick={handleActivatePlan}
+                  className="w-full max-w-md bg-[#00BFA6] hover:bg-[#00A693] text-white py-6 px-8 rounded-lg font-bold text-lg transition-colors duration-200 cursor-pointer relative z-20 block" 
+                  style={{minHeight: '60px'}}
+                >
+                  {language === 'de' ? 'Plan jetzt aktivieren' : 'Activate Your Plan Now'}
+                </button>
+              </div>
+            </div>
+            
+            <div className="text-center relative z-5">
+              <div className="flex items-center justify-center mb-1">
+                <span className="text-gray-900 font-medium mr-2 text-sm">
+                  {language === 'de' ? 'Ausgezeichnet' : 'Excellent'}
+                </span>
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <svg className="w-4 h-4 text-blue-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
                 </div>
+              </div>
+              <p className="text-gray-600 text-xs">
+                {language === 'de' ? '350+ zufriedene Kunden' : '350+ satisfied customers'}
+              </p>
+            </div>
           </div>
         </section>
 
@@ -306,9 +364,12 @@ export default function SolutionsPage() {
                     </button>
                     {isOpen === index && (
                       <div className="px-6 pb-6">
-                        <p className="text-gray-300 text-base md:text-lg leading-relaxed">
-                          {language === 'de' ? faq.answer.de : faq.answer.en}
-                        </p>
+                        <p 
+                          className="text-gray-300 text-base md:text-lg leading-relaxed"
+                          dangerouslySetInnerHTML={{
+                            __html: language === 'de' ? faq.answer.de : faq.answer.en
+                          }}
+                        />
                       </div>
                     )}
                   </div>

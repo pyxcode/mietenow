@@ -133,7 +133,7 @@ export default function LoginPage() {
             >
               {loading 
                 ? (language === 'de' ? 'Wird angemeldet...' : 'Signing in...')
-                : (language === 'de' ? 'Anmelden' : 'Sign In')
+                : (language === 'de' ? 'Zum Dashboard' : 'Go to Dashboard')
               }
             </button>
           </form>
@@ -149,10 +149,10 @@ export default function LoginPage() {
             </Link>
             
             <Link 
-              href="/signup"
-              className="text-[#00BFA6] hover:text-[#00BFA6]/80 transition-colors text-sm font-medium"
+              href="/criteria"
+              className="text-[#00BFA6] hover:text-[#00BFA6]/80 transition-colors text-sm font-medium relative z-50 cursor-pointer"
             >
-              {language === 'de' ? 'Noch kein Konto? Jetzt registrieren' : "Don't have an account? Sign up now"}
+              {language === 'de' ? 'Noch kein Konto? Finde dein neues Zuhause jetzt' : "Don't have an account? Find your new home now"}
             </Link>
           </div>
         </div>

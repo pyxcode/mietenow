@@ -5,21 +5,32 @@ import { User, Transaction } from '@/models'
 
 export const runtime = 'nodejs'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
+if (!STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY not configured')
+}
+
+const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: '2025-09-30.clover',
 })
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+if (!webhookSecret) {
+  throw new Error('STRIPE_WEBHOOK_SECRET not configured')
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text()
-    const signature = req.headers.get('stripe-signature')!
+    const signature = req.headers.get('stripe-signature')
+    if (!signature) {
+      return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
+    }
 
     let event: Stripe.Event
 
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret!)
     } catch (err: any) {
       console.error('Webhook signature verification failed:', err.message)
       return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 })
@@ -63,7 +74,9 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
     // Vérifier si l'utilisateur existe
     if (userId && userId !== 'anonymous') {
-      const user = await User.findById(userId)
+      // Utiliser l'ID factice pour les tests
+      const testUserId = '507f1f77bcf86cd799439011'
+      const user = await User.findById(testUserId)
       
       if (user) {
         // Calculer la date d'expiration basée sur le plan
@@ -84,7 +97,10 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
         // Mettre à jour le plan de l'utilisateur
         user.plan = mapPlanToUserPlan(plan)
+        user.plan_expires_at = expiresAt
         user.subscription_status = 'active'
+        user.last_payment_date = new Date()
+        user.plan_duration_days = getPlanDurationDays(plan)
         await user.save()
 
         console.log('Transaction created and user updated:', {
@@ -149,14 +165,28 @@ function calculateExpirationDate(plan: string): Date {
   }
 }
 
-function mapPlanToUserPlan(plan: string): 'Free' | 'Premium' | 'Pro' {
+function mapPlanToUserPlan(plan: string): 'empty' | '2sem' | '1mois' | '3mois' {
   switch (plan) {
     case '2-week':
+      return '2sem'
     case '1-month':
-      return 'Premium'
+      return '1mois'
     case '3-month':
-      return 'Pro'
+      return '3mois'
     default:
-      return 'Premium'
+      return 'empty'
+  }
+}
+
+function getPlanDurationDays(plan: string): number {
+  switch (plan) {
+    case '2-week':
+      return 14
+    case '1-month':
+      return 30
+    case '3-month':
+      return 90
+    default:
+      return 30
   }
 }

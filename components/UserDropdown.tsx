@@ -4,13 +4,11 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import Link from 'next/link'
-import MyAlertsModal from './MyAlertsModal'
 
 const UserDropdown: React.FC = () => {
   const { user, logout } = useAuth()
   const { language } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
-  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const translations = {
@@ -18,13 +16,13 @@ const UserDropdown: React.FC = () => {
       profile: 'Profil',
       logout: 'Abmelden',
       help: 'Hilfe',
-      myAlerts: 'Meine Alerts'
+      dashboard: 'Zum Dashboard',
     },
     en: {
       profile: 'Profile',
       logout: 'Logout',
       help: 'Help',
-      myAlerts: 'My Alerts'
+      dashboard: 'Go to Dashboard',
     }
   }
 
@@ -83,18 +81,17 @@ const UserDropdown: React.FC = () => {
 
           {/* Options du menu */}
           <div className="py-1">
-            <button
-              onClick={() => {
-                setIsOpen(false)
-                setIsAlertsModalOpen(true)
-              }}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+            <Link
+              href="/search"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+              onClick={() => setIsOpen(false)}
             >
               <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4 19h6v-2H4v2zM4 15h6v-2H4v2zM4 11h6V9H4v2zM4 7h6V5H4v2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
               </svg>
-              {t.myAlerts}
-            </button>
+              {t.dashboard}
+            </Link>
 
             <Link
               href="/help"
@@ -122,11 +119,6 @@ const UserDropdown: React.FC = () => {
         </div>
       )}
 
-      {/* My Alerts Modal */}
-      <MyAlertsModal 
-        isOpen={isAlertsModalOpen} 
-        onClose={() => setIsAlertsModalOpen(false)} 
-      />
     </div>
   )
 }

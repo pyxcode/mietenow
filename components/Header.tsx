@@ -14,6 +14,14 @@ export default function Header() {
   const { language, changeLanguage, t } = useTranslation()
   const { user, loading } = useAuth()
 
+  // Fonction pour gérer le clic sur "Go to Dashboard"
+  const handleDashboardClick = () => {
+    if (!user) return
+    
+    // Toujours rediriger vers /search, même avec un plan vide
+    window.location.href = '/search'
+  }
+
   const navigation = [
     { name: t('nav.rent'), href: '/mieten' },
     { name: t('nav.solutions'), href: '/solutions' },
@@ -91,7 +99,12 @@ export default function Header() {
             {loading ? (
               <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
             ) : user ? (
-              <UserDropdown />
+              <button 
+                onClick={handleDashboardClick}
+                className="bg-[#00BFA6] hover:bg-[#00A693] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+              >
+                {t('nav.dashboard')}
+              </button>
             ) : (
               <Link 
                 href="/login" 
@@ -157,9 +170,15 @@ export default function Header() {
                 {loading ? (
                   <div className="w-full h-10 bg-gray-200 rounded-lg animate-pulse"></div>
                 ) : user ? (
-                  <div className="flex justify-center">
-                    <UserDropdown />
-                  </div>
+                  <button
+                    onClick={() => {
+                      handleDashboardClick()
+                      setIsMenuOpen(false)
+                    }}
+                    className="block w-full text-center bg-[#00BFA6] hover:bg-[#00A693] text-white py-2 rounded-lg font-medium transition-colors duration-200"
+                  >
+                    {t('nav.dashboard')}
+                  </button>
                 ) : (
                   <Link
                     href="/login"

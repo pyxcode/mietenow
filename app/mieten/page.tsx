@@ -2,14 +2,29 @@
 
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import Image from 'next/image'
-import Link from 'next/link'
+import { Search } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function MietenPage() {
-  const { language } = useTranslation()
+  const { t, language } = useTranslation()
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    minPrice: '500',
+    maxPrice: '1500',
+    type: 'Any'
+  })
   const [isOpen, setIsOpen] = useState<number | null>(null)
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleSearch = async () => {
+    // Rediriger directement vers criteria pour commencer l'onboarding
+    router.push('/criteria')
+  }
 
   const toggleFAQ = (index: number) => {
     setIsOpen(isOpen === index ? null : index)
@@ -72,8 +87,8 @@ export default function MietenPage() {
         en: "I have another question..."
       },
       answer: {
-        de: "Wenn Sie weitere Fragen haben, zögern Sie nicht, uns über Chat oder E-Mail unter support@mietenow.de zu kontaktieren. Wir helfen Ihnen gerne weiter!",
-        en: "If you have any additional questions, feel free to reach out to us via chat or email at support@mietenow.de. We're always happy to assist!"
+        de: "Wenn Sie weitere Fragen haben, zögern Sie nicht, uns über unseren <a href='#' onclick='window.$crisp.push([\"do\", \"chat:open\"])' class='text-[#00BFA6] hover:underline cursor-pointer'>Live-Chat</a> zu kontaktieren. Wir helfen Ihnen gerne weiter!",
+        en: "If you have any additional questions, feel free to reach out to us via our <a href='#' onclick='window.$crisp.push([\"do\", \"chat:open\"])' class='text-[#00BFA6] hover:underline cursor-pointer'>Live Chat</a>. We're always happy to assist!"
       }
     }
   ]
@@ -83,93 +98,102 @@ export default function MietenPage() {
       <Header />
       
       <main className="min-h-screen">
-        {/* Hero Section - Style Landing avec contenu côte à côte */}
-        <section className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 min-h-screen flex items-center justify-center relative overflow-hidden">
-          <div className="container-custom z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-              {/* Contenu à gauche */}
-              <div className="flex flex-col">
-                {/* Title */}
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
-                  {language === 'de' ? 'Mieten' : 'Rent'}
-                </h1>
-                
-                {/* Subtitle */}
-                <p className="text-lg md:text-xl text-gray-300 mb-6 md:mb-8">
-                  {language === 'de' 
-                    ? 'Finden Sie Ihre perfekte Wohnung in Berlin'
-                    : 'Find your perfect apartment in Berlin'
-                  }
-                </p>
+        {/* Hero Section - Style Landing avec module de recherche */}
+        <section className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
 
-                {/* Search Simulator */}
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 mb-8">
-                  <div className="space-y-6">
-                    <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">
-                      {language === 'de' ? 'Suchen Sie Ihre Wohnung' : 'Search for your apartment'}
-                    </h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-white font-semibold mb-2">
-                          {language === 'de' ? 'Mindestpreis' : 'Min Price'}
-                        </label>
-                        <input 
-                          type="number" 
-                          placeholder={language === 'de' ? '€800' : '€800'}
-                          className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00BFA6]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white font-semibold mb-2">
-                          {language === 'de' ? 'Höchstpreis' : 'Max Price'}
-                        </label>
-                        <input 
-                          type="number" 
-                          placeholder={language === 'de' ? '€1500' : '€1500'}
-                          className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00BFA6]"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-white font-semibold mb-2">
-                        {language === 'de' ? 'Stadt' : 'City'}
-                      </label>
-                      <input 
-                        type="text" 
-                        value="Berlin" 
-                        disabled
-                        className="w-full px-4 py-3 rounded-lg bg-gray-500/30 border border-gray-400/30 text-gray-300 cursor-not-allowed"
-                      />
-                    </div>
-                    
-                    <Link href="/criteria" className="w-full bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors duration-200 text-center block">
-                      {language === 'de' ? 'Suchen starten' : 'Start searching'}
-                    </Link>
-                  </div>
+          {/* Main Content */}
+          <div className="text-center z-10 max-w-4xl mx-auto px-6">
+            {/* Title */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
+              {language === 'de' ? 'Finden Sie Ihre Wohnung' : 'Find Your Apartment'}
+            </h1>
+            
+            {/* Subtitle */}
+            <p className="text-lg md:text-xl text-gray-300 mb-6 md:mb-8">
+              {language === 'de' 
+                ? 'Der kürzeste Weg zu Ihrer nächsten Wohnung in Berlin'
+                : 'The shortest way to your next apartment in Berlin'
+              }
+            </p>
+
+            {/* Search Bar Complete - Berlin Only */}
+            <div className="bg-white rounded-2xl shadow-xl p-6 max-w-3xl mx-auto mb-16">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Prix Min */}
+                <div>
+                  <label className="block text-sm font-medium text-[#6B7280] mb-2 text-left">
+                    {language === 'de' ? 'Mindestpreis' : 'Min Price'}
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="500"
+                    value={formData.minPrice}
+                    onChange={(e) => handleInputChange('minPrice', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#004AAD] focus:border-transparent text-gray-900"
+                  />
                 </div>
-              </div>
 
-              {/* Photo à droite - Alignée avec le bloc de texte */}
-              <div className="flex flex-col">
-                {/* Espace pour aligner avec le titre et sous-titre */}
-                <div className="h-[143px]"></div>
-                
-                {/* Image alignée avec le bloc de texte - Échelle réduite */}
-                <div className="w-full h-[400px]">
-                  <div className="rounded-2xl overflow-hidden shadow-2xl w-full h-full">
-                    <Image
-                      src="/Logos/berlin.png"
-                      alt={language === 'de' ? 'Berlin Stadtbild' : 'Berlin cityscape'}
-                      width={200}
-                      height={200}
-                      className="w-full h-full object-cover object-center"
-                    />
-                  </div>
+                {/* Prix Max */}
+                <div>
+                  <label className="block text-sm font-medium text-[#6B7280] mb-2 text-left">
+                    {language === 'de' ? 'Höchstpreis' : 'Max Price'}
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="1500"
+                    value={formData.maxPrice}
+                    onChange={(e) => handleInputChange('maxPrice', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#004AAD] focus:border-transparent text-gray-900"
+                  />
+                </div>
+
+                {/* Bouton Recherche */}
+                <div className="flex items-end">
+                  <button 
+                    onClick={handleSearch}
+                    className="w-full bg-[#004AAD] hover:bg-[#002E73] text-white px-6 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <Search className="w-5 h-5" />
+                    {language === 'de' ? 'Suchen' : 'Search'}
+                  </button>
                 </div>
               </div>
             </div>
+
+            {/* Additional Info */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 max-w-2xl mx-auto">
+              <div className="space-y-4 text-lg md:text-xl text-gray-200 leading-relaxed">
+                <p>
+                  {language === 'de' 
+                    ? 'Durchsuchen Sie Tausende von Anzeigen in Deutschland'
+                    : 'Search through thousands of listings in Germany'
+                  }
+                </p>
+                
+                <p className="text-[#00BFA6] font-semibold">
+                  {language === 'de'
+                    ? 'Schnell, einfach und effizient'
+                    : 'Fast, easy and efficient'
+                  }
+                </p>
+                
+                <p>
+                  {language === 'de'
+                    ? 'Unsere Plattform aggregiert Anzeigen von über 100 Mietseiten und zeigt Ihnen die besten Angebote in Berlin.'
+                    : 'Our platform aggregates listings from over 100 rental sites and shows you the best offers in Berlin.'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Berlin Image at very bottom */}
+          <div className="absolute -bottom-[340px] left-0 right-0 z-5">
+            <img 
+              src="/Logos/berlin.png" 
+              alt="Berlin" 
+              className="w-full h-auto opacity-10"
+            />
           </div>
 
           {/* Floating Elements */}
@@ -218,9 +242,12 @@ export default function MietenPage() {
                     </button>
                     {isOpen === index && (
                       <div className="px-6 pb-6">
-                        <p className="text-gray-300 text-base md:text-lg leading-relaxed">
-                          {language === 'de' ? faq.answer.de : faq.answer.en}
-                        </p>
+                        <p 
+                          className="text-gray-300 text-base md:text-lg leading-relaxed"
+                          dangerouslySetInnerHTML={{
+                            __html: language === 'de' ? faq.answer.de : faq.answer.en
+                          }}
+                        />
                       </div>
                     )}
                   </div>

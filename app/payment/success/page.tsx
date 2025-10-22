@@ -15,13 +15,47 @@ export default function PaymentSuccess() {
   const { language } = useLanguage()
 
   useEffect(() => {
-    // Simuler une vérification rapide
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+    // Activer automatiquement le plan
+    const activatePlan = async () => {
+      try {
+        if (plan) {
+          // Récupérer l'ID de l'utilisateur depuis localStorage ou session
+          const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId')
+          
+          if (!userId) {
+            console.error('❌ ID utilisateur non trouvé')
+            setLoading(false)
+            return
+          }
+          
+          const response = await fetch('/api/activate-plan', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ plan, userId })
+          })
+          
+          if (response.ok) {
+            console.log('✅ Plan activé automatiquement')
+          } else {
+            console.error('❌ Erreur lors de l\'activation du plan')
+          }
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de l\'activation du plan:', error)
+      }
+      
+      // Simuler une vérification rapide
+      const timer = setTimeout(() => {
+        setLoading(false)
+      }, 1000)
 
-    return () => clearTimeout(timer)
-  }, [])
+      return () => clearTimeout(timer)
+    }
+
+    activatePlan()
+  }, [plan])
 
   const translations = {
     de: {
@@ -34,7 +68,7 @@ export default function PaymentSuccess() {
       communityTitle: 'Willkommen in der Berliner mietenow Community ❤️',
       communitySubtitle: 'Eine Nachricht von unseren ersten Nutzern',
       sarah: 'Sarah M.',
-      sarahRole: 'Studentin, TU Berlin',
+      sarahRole: 'Französischlehrerin, TU Berlin',
       sarahQuote: 'Ich war skeptisch am Anfang, aber mietenow hat wirklich funktioniert. Nach 3 Wochen hatte ich meine Wohnung in Prenzlauer Berg.',
       anna: 'Anna K.',
       annaRole: 'Köchin, Restaurant Amarone',
@@ -62,7 +96,7 @@ export default function PaymentSuccess() {
       communityTitle: 'Welcome to the Berliner mietenow Community ❤️',
       communitySubtitle: 'A note from our first users',
       sarah: 'Sarah M.',
-      sarahRole: 'Student, TU Berlin',
+      sarahRole: 'French teacher, TU Berlin',
       sarahQuote: 'Ich war skeptisch am Anfang, aber mietenow hat wirklich funktioniert. Nach 3 Wochen hatte ich meine Wohnung in Prenzlauer Berg.',
       anna: 'Anna K.',
       annaRole: 'Chef, Restaurant Amarone',
