@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import ClientOnlyWrapper from '@/components/ClientOnlyWrapper'
 import SolutionsPageContent from '@/components/SolutionsPageContent'
 

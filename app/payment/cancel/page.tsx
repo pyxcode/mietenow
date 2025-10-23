@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import SimpleHeader from '@/components/SimpleHeader'
 import Link from 'next/link'
 
