@@ -1,10 +1,10 @@
-import ClientOnlyWrapper from '@/components/ClientOnlyWrapper'
+import NoSSRWrapper from '@/components/NoSSRWrapper'
 import HomePageContent from '@/components/HomePageContent'
 
 export default function HomePage() {
   return (
-    <ClientOnlyWrapper>
+    <NoSSRWrapper>
       <HomePageContent />
-    </ClientOnlyWrapper>
+    </NoSSRWrapper>
   )
 }
