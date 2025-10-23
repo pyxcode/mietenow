@@ -27,13 +27,17 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  // Forcer le rendu dynamique pour toutes les pages
+  const response = NextResponse.next()
+  response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Expires', '0')
+  
+  return response
 }
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/profile/:path*',
-    '/settings/:path*'
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ]
 }
