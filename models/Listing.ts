@@ -139,8 +139,7 @@ const ListingSchema = new Schema<IListing>({
   provider: {
     type: String,
     required: true,
-    enum: ['immoscout', 'wg-gesucht', 'immowelt', 'immonet', 'kleinanzeigen'],
-    index: true
+    enum: ['immoscout', 'wg-gesucht', 'immowelt', 'immonet', 'kleinanzeigen']
   },
   external_id: {
     type: String,
