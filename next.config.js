@@ -62,6 +62,9 @@ const nextConfig = {
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
+  // Désactiver la génération statique pour toutes les pages
+  skipTrailingSlashRedirect: true,
+  trailingSlash: false,
 }
 
 module.exports = nextConfig
