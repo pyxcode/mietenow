@@ -66,10 +66,6 @@ const nextConfig = {
   // Désactiver la génération statique pour toutes les pages
   skipTrailingSlashRedirect: true,
   trailingSlash: false,
-  // Forcer le rendu dynamique pour toutes les pages
-  generateBuildId: async () => {
-    return 'build-' + Date.now()
-  },
 }
 
 module.exports = nextConfig
