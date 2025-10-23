@@ -58,6 +58,10 @@ const nextConfig = {
   },
   // Configuration pour éviter les connexions DB pendant le build
   output: 'standalone',
+  // Forcer le rendu dynamique pour éviter les erreurs de prerendering
+  generateBuildId: async () => {
+    return 'build-' + Date.now()
+  },
 }
 
 module.exports = nextConfig

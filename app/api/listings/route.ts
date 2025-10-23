@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/mongodb'
 import mongoose from 'mongoose'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {

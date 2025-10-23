@@ -4,6 +4,7 @@ import connectDB from '@/lib/mongodb'
 import { User, Transaction } from '@/models'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 if (!STRIPE_SECRET_KEY) {

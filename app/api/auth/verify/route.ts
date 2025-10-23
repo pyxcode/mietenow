@@ -4,6 +4,7 @@ import connectDB from '@/lib/mongodb'
 import { User } from '@/models'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {
