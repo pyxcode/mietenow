@@ -56,6 +56,8 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth'],
   },
+  // Configuration pour éviter les connexions DB pendant le build
+  output: 'standalone',
 }
 
 module.exports = nextConfig
