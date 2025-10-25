@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import Stripe from 'stripe'
 import connectDB from '@/lib/mongodb'
 import { User, Transaction } from '@/models'
