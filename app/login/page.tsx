@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -10,6 +8,8 @@ import { ChevronLeft, Mail, Lock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import SimpleHeader from '@/components/SimpleHeader'
+
+export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   const { language } = useLanguage()

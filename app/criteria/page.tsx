@@ -7,6 +7,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import SimpleHeader from '@/components/SimpleHeader'
 
+export const dynamic = 'force-dynamic'
+
 export default function CriteriaPage() {
   const { language } = useLanguage()
   const [currentStep, setCurrentStep] = useState(0)
