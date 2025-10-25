@@ -1,5 +1,0 @@
-0 * * * * cd /Users/louan/Desktop/PROJETS/mietenow && node scripts/cron-hourly-simple.js >> logs/cron-hourly.log 2>&1
-0 2 * * * cd /Users/louan/Desktop/PROJETS/mietenow && node scripts/cron-daily-cleanup.js >> logs/cron-daily-cleanup.log 2>&1
-5 * * * * cd /Users/louan/Desktop/PROJETS/mietenow && node scripts/cron-send-alerts.js >> logs/cron-alerts.log 2>&1
-0 9 * * * cd /Users/louan/Desktop/PROJETS/mietenow && node scripts/cron-send-unpaid.js >> logs/cron-unpaid.log 2>&1
-0 1 * * * cd /Users/louan/Desktop/PROJETS/mietenow && node scripts/cron-check-plans.js >> logs/plan-check.log 2>&1

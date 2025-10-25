@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
-import { Suspense } from 'react'
-import ClientProviders from '@/components/ClientProviders'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { LanguageProvider } from '@/contexts/LanguageContext'
+import CrispChat from '@/components/CrispChat'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -84,18 +85,12 @@ export default function RootLayout({
   return (
     <html lang="de" className={`${inter.variable} ${manrope.variable}`}>
       <body className={`${inter.className} antialiased`}>
-        <Suspense fallback={
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-              <p className="text-gray-600">Loading...</p>
-            </div>
-          </div>
-        }>
-          <ClientProviders>
+        <AuthProvider>
+          <LanguageProvider>
             {children}
-          </ClientProviders>
-        </Suspense>
+            <CrispChat />
+          </LanguageProvider>
+        </AuthProvider>
       </body>
     </html>
   )
