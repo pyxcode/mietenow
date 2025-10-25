@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PlanModal from '@/components/PlanModal'
 
-export default function RentPageContent() {
+export default function RentPage() {
   const { t, language } = useTranslation()
   const { savePreferences, preferences, loading } = useUserPreferences()
   const { user } = useAuth()

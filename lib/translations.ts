@@ -109,12 +109,19 @@ export const translations = {
         legal: 'Rechtliches'
       },
       links: {
+        features: 'Funktionen',
+        pricing: 'Preise',
+        api: 'API',
+        integrations: 'Integrationen',
         about: 'Über uns',
         blog: 'Blog',
+        careers: 'Karriere',
+        press: 'Presse',
         help: 'Hilfezentrum',
         contact: 'Kontakt',
+        status: 'Status',
         community: 'Community',
-        impressum: 'Impressum',
+        legal: 'Impressum',
         privacy: 'Datenschutz',
         terms: 'AGB',
         cookies: 'Cookies'
@@ -272,12 +279,19 @@ export const translations = {
         legal: 'Legal'
       },
       links: {
+        features: 'Features',
+        pricing: 'Pricing',
+        api: 'API',
+        integrations: 'Integrations',
         about: 'About',
         blog: 'Blog',
+        careers: 'Careers',
+        press: 'Press',
         help: 'Help Center',
         contact: 'Contact',
+        status: 'Status',
         community: 'Community',
-        impressum: 'Impressum',
+        legal: 'Legal',
         privacy: 'Privacy',
         terms: 'Terms',
         cookies: 'Cookies'

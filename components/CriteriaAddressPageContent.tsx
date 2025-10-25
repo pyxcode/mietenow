@@ -9,7 +9,7 @@ import SimpleHeader from '@/components/SimpleHeader'
 import { useRouter } from 'next/navigation'
 import { geocodeAddress } from '@/lib/geocoding'
 
-export default function CriteriaAddressPageContent() {
+export default function AddressCriteriaPage() {
   const { language } = useLanguage()
   const { preferences, savePreferences } = useUserPreferences()
   const router = useRouter()

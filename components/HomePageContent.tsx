@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useState } from 'react'
 import PlanModal from '@/components/PlanModal'
 
-export default function HomePageContent() {
+export default function HomePage() {
   const { t, language } = useTranslation()
   const { user } = useAuth()
   const [showPlanModal, setShowPlanModal] = useState(false)

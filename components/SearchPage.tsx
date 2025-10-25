@@ -1,7 +1,5 @@
 'use client'
 
-// SearchPage component - client-side only
-
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Search, MapPin, Euro, Home, Filter, Loader2, Bell, Info } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient } from 'mongodb'
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
 function buildMongoFilter(criteria: any) {
   const filter: any = {}
   

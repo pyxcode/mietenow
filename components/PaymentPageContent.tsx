@@ -11,7 +11,7 @@ import Footer from '@/components/Footer'
 import PaymentForm from '@/components/PaymentForm'
 import { useSearchParams } from 'next/navigation'
 
-export default function PaymentPageContent() {
+export default function PaymentPage() {
   const { language } = useLanguage()
   const { user } = useAuth()
   const searchParams = useSearchParams()

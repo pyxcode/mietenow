@@ -50,10 +50,10 @@ export function usePlanCheck() {
 
   // Fonction pour obtenir le temps restant
   const getTimeRemaining = () => {
-    if (!(user as any)?.plan_expires_at) return null
+    if (!user?.plan_expires_at) return null
     
     const now = new Date()
-    const expiry = new Date((user as any).plan_expires_at)
+    const expiry = new Date(user.plan_expires_at)
     const diff = expiry.getTime() - now.getTime()
     
     if (diff <= 0) return null
@@ -68,7 +68,7 @@ export function usePlanCheck() {
     isPlanValid,
     isLoading,
     userPlan: user?.plan || 'empty',
-    planExpiresAt: (user as any)?.plan_expires_at,
+    planExpiresAt: user?.plan_expires_at,
     planStatus,
     timeRemaining: getTimeRemaining(),
     isExpired: planStatus === 'expired',

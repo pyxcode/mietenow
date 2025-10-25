@@ -23,7 +23,7 @@ interface Listing {
   lng: number
 }
 
-export default function ListingDetailPageContent() {
+export default function ListingPage() {
   const params = useParams()
   const router = useRouter()
   const { language } = useLanguage()

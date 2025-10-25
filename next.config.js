@@ -55,17 +55,7 @@ const nextConfig = {
   // Configuration expérimentale pour éviter les erreurs
   experimental: {
     serverComponentsExternalPackages: ['puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth'],
-    forceSwcTransforms: true,
   },
-  // Configuration pour éviter les connexions DB pendant le build
-  output: 'standalone',
-  // Forcer le rendu dynamique pour éviter les erreurs de prerendering
-  generateBuildId: async () => {
-    return 'build-' + Date.now()
-  },
-  // Désactiver la génération statique pour toutes les pages
-  skipTrailingSlashRedirect: true,
-  trailingSlash: false,
 }
 
 module.exports = nextConfig

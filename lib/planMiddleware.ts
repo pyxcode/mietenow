@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import connectDB from '@/lib/mongodb'
-import { User } from '@/models'
+import { authOptions } from '@/lib/auth'
+import { connectToDatabase } from '@/lib/mongodb'
+import User from '@/models/User'
 
 export async function requireValidPlan(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    await connectDB()
+    await connectToDatabase()
     
     const user = await User.findOne({ email: session.user.email })
     if (!user) {
@@ -38,13 +39,13 @@ export async function requireValidPlan(request: NextRequest) {
 
 export async function requirePaidPlan(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    await connectDB()
+    await connectToDatabase()
     
     const user = await User.findOne({ email: session.user.email })
     if (!user) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 import connectDB from '@/lib/mongodb'
 import { User } from '@/models'
 
@@ -48,8 +49,15 @@ export async function POST(req: NextRequest) {
     await user.save()
 
     // Créer le token JWT
-    const { generateToken } = await import('@/lib/auth')
-    const token = await generateToken(user)
+    const token = jwt.sign(
+      { 
+        userId: user._id,
+        email: user.email,
+        plan: user.plan
+      },
+      JWT_SECRET!,
+      { expiresIn: '7d' }
+    )
 
     // Retourner la réponse sans le mot de passe
     return NextResponse.json({

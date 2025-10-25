@@ -101,3 +101,4 @@ envVars:
     description: "Mot de passe Bright Data"
   - key: BRIGHT_DATA_ENDPOINT
     description: "Endpoint Bright Data"
+

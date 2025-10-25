@@ -9,7 +9,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import SimpleHeader from '@/components/SimpleHeader'
 
-export default function SignupPageContent() {
+export default function SignupPage() {
   const { language } = useLanguage()
   const { register } = useAuth()
   const router = useRouter()

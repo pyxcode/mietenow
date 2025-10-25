@@ -186,8 +186,7 @@ function StableMarkersLayer({
               <p style="font-weight: bold; font-size: 14px; margin: 0 0 8px 0; color: #2563eb;">
                 ${typeof listing.price === 'number' ? `${listing.price} €` : listing.price}
               </p>
-              <button data-listing-id="${listing.id}" 
-                      class="select-listing-btn"
+              <button onclick="window.selectListing && window.selectListing('${listing.id}')" 
                       style="width: 100%; background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
                 View Details
               </button>
@@ -310,8 +309,7 @@ function StableMarkersLayer({
               <p style="font-weight: bold; font-size: 14px; margin: 0 0 8px 0; color: #2563eb;">
                 ${typeof listing.price === 'number' ? `${listing.price} €` : listing.price}
               </p>
-              <button data-listing-id="${listing.id}" 
-                      class="select-listing-btn"
+              <button onclick="window.selectListing && window.selectListing('${listing.id}')" 
                       style="width: 100%; background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
                 View Details
               </button>
@@ -420,28 +418,6 @@ function MapComponent({
       </div>
     )
   }
-
-  // Gérer les clics sur les boutons des popups
-  useEffect(() => {
-    const handlePopupClick = (event: Event) => {
-      const target = event.target as HTMLElement
-      if (target.classList.contains('select-listing-btn')) {
-        const listingId = target.getAttribute('data-listing-id')
-        if (listingId) {
-          const listing = listings.find(l => l.id === listingId)
-          if (listing) {
-            onListingSelect(listing)
-            if (onListingClick) {
-              onListingClick(listing)
-            }
-          }
-        }
-      }
-    }
-
-    document.addEventListener('click', handlePopupClick)
-    return () => document.removeEventListener('click', handlePopupClick)
-  }, [listings, onListingSelect, onListingClick])
 
   return (
     <div className="relative w-full h-full">

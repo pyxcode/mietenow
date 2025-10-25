@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import Listing from '@/models/Listing'
 
-export const runtime = 'nodejs'
-
 export async function POST(request: NextRequest) {
   try {
     console.log('🔍 Starting status check for listings...')

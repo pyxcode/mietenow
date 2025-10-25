@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import mongoose from 'mongoose'
 
-export const runtime = 'nodejs'
-
 export async function POST(request: NextRequest) {
   try {
     // Forcer la connexion à mietenow-prod

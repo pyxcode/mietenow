@@ -225,3 +225,4 @@ Après déploiement, vous aurez :
 - ✅ **Vérification plans** : 1x/jour
 
 **🚀 Votre application MieteNow sera 100% opérationnelle sur Render !**
+

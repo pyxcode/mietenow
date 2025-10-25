@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import SimpleHeader from '@/components/SimpleHeader'
 
-export default function CriteriaPageContent() {
+export default function CriteriaPage() {
   const { language } = useLanguage()
   const [currentStep, setCurrentStep] = useState(0)
   const [criteria, setCriteria] = useState({

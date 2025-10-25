@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic'
-
 import PlanGuard from '@/components/PlanGuard'
 import PlanStatus from '@/components/PlanGuard'
 

@@ -166,7 +166,8 @@ const UserSchema = new Schema<IUser>({
   timestamps: true // Ajoute automatiquement createdAt et updatedAt
 })
 
-// Index pour optimiser les recherches (email déjà indexé par unique: true)
+// Index pour optimiser les recherches
+UserSchema.index({ email: 1 })
 UserSchema.index({ plan: 1 })
 UserSchema.index({ subscription_status: 1 })
 

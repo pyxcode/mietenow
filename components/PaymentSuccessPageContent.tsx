@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-export default function PaymentSuccessPageContent() {
+export default function PaymentSuccess() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const plan = searchParams.get('plan')
