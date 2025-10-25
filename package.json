@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "NODE_ENV=production next build",
-    "start": "node scripts/start-prod.js",
+    "start": "next start",
     "lint": "next lint",
     "cleanup": "ts-node scripts/cleanup-listings.ts",
     "cleanup:prod": "node scripts/cron-cleanup-standalone.js",
