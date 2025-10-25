@@ -57,9 +57,9 @@ const nextConfig = {
     serverComponentsExternalPackages: ['puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth'],
   },
   // Configuration pour éviter les erreurs de build avec Puppeteer
-  output: 'standalone',
+  // output: 'standalone', // Désactivé pour Render
   // Désactiver complètement le prerendering pour éviter les erreurs
-  generateStaticParams: false,
+  // generateStaticParams: false, // Désactivé car non supporté
   // Forcer le rendu dynamique partout
   trailingSlash: false,
   skipTrailingSlashRedirect: true,

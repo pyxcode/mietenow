@@ -1,8 +1,8 @@
-# 🚀 Configuration Render pour MieteNow
-# Ce fichier décrit tous les services nécessaires pour déployer l'application
+# 🚀 Configuration Render pour MieteNow - Mode Serveur
+# Ce fichier force Render à utiliser le mode serveur Next.js
 
 services:
-  # 🌐 Application Web Next.js
+  # 🌐 Application Web Next.js - Mode Serveur
   - type: web
     name: mietenow-web
     env: node
@@ -11,8 +11,8 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /
-    # Forcer le mode serveur (pas d'export statique)
-    runtime: node
+    # Configuration spécifique pour Next.js
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
@@ -103,4 +103,3 @@ envVars:
     description: "Mot de passe Bright Data"
   - key: BRIGHT_DATA_ENDPOINT
     description: "Endpoint Bright Data"
-
