@@ -90,19 +90,21 @@ export default function RootLayout({
         <meta name="theme-color" content="#004AAD" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         
-        {/* Crisp Chat */}
+        {/* Crisp Chat - Client-side only */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.$crisp=[];
-              window.CRISP_WEBSITE_ID="e9057db7-b421-440c-8276-ce74d7f617e7";
-              (function(){
-                d=document;
-                s=d.createElement("script");
-                s.src="https://client.crisp.chat/l.js";
-                s.async=1;
-                d.getElementsByTagName("head")[0].appendChild(s);
-              })();
+              if (typeof window !== 'undefined') {
+                window.$crisp=[];
+                window.CRISP_WEBSITE_ID="e9057db7-b421-440c-8276-ce74d7f617e7";
+                (function(){
+                  d=document;
+                  s=d.createElement("script");
+                  s.src="https://client.crisp.chat/l.js";
+                  s.async=1;
+                  d.getElementsByTagName("head")[0].appendChild(s);
+                })();
+              }
             `,
           }}
         />
