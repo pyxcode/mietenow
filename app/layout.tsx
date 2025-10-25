@@ -82,7 +82,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="de" className={`${inter.variable} ${manrope.variable}`} suppressHydrationWarning>
+    <html lang="de" className={`${inter.variable} ${manrope.variable}`}>
       <body className={`${inter.className} antialiased`}>
         <Suspense fallback={
           <div className="min-h-screen flex items-center justify-center">
@@ -96,33 +96,6 @@ export default function RootLayout({
             {children}
           </ClientProviders>
         </Suspense>
-        
-        {/* Crisp Chat - Client-side only with proper async context */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if (typeof window !== 'undefined') {
-                // Ensure we're in the correct execution context
-                const initCrisp = () => {
-                  window.$crisp=[];
-                  window.CRISP_WEBSITE_ID="e9057db7-b421-440c-8276-ce74d7f617e7";
-                  const d = document;
-                  const s = d.createElement("script");
-                  s.src="https://client.crisp.chat/l.js";
-                  s.async=1;
-                  d.getElementsByTagName("head")[0].appendChild(s);
-                };
-                
-                // Use requestAnimationFrame to ensure proper context
-                if (window.requestAnimationFrame) {
-                  window.requestAnimationFrame(initCrisp);
-                } else {
-                  setTimeout(initCrisp, 0);
-                }
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   )

@@ -8,10 +8,10 @@ services:
     env: node
     region: frankfurt
     plan: starter
-    buildCommand: NODE_ENV=production npm install && NODE_ENV=production npm run build
-    startCommand: NODE_ENV=production npm start
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
     healthCheckPath: /
-    # Forcer le mode serveur (pas d'export statique)
+    # Mode serveur uniquement (pas de prerendering)
     runtime: node
     envVars:
       - key: NODE_ENV

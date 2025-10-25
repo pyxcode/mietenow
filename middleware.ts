@@ -1,39 +1,40 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth'
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value || 
-                request.headers.get('authorization')?.replace('Bearer ', '')
+  // Forcer le mode Node.js pour toutes les routes
+  const headers = new Headers(request.headers)
+  headers.set('x-middleware-next', '1')
 
-  // Routes protégées
-  const protectedRoutes = ['/dashboard', '/profile', '/settings']
-  const isProtectedRoute = protectedRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
-  )
+  // Ajouter des en-têtes de sécurité
+  const response = NextResponse.next({
+    request: {
+      headers,
+    },
+  })
 
-  if (isProtectedRoute) {
-    if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
+  response.headers.set('X-DNS-Prefetch-Control', 'on')
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
 
-    try {
-      const decoded = verifyToken(token)
-      if (!decoded) {
-        return NextResponse.redirect(new URL('/login', request.url))
-      }
-    } catch (error) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-  }
-
-  return NextResponse.next()
+  return response
 }
 
+// Configurer les chemins à gérer
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/profile/:path*',
-    '/settings/:path*'
-  ]
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+  ],
 }
