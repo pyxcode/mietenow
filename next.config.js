@@ -55,9 +55,12 @@ const nextConfig = {
   // Configuration expérimentale pour éviter les erreurs
   experimental: {
     serverComponentsExternalPackages: ['puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth'],
+    staticPageGenerationTimeout: 0,
   },
   // Configuration pour éviter les erreurs de build avec Puppeteer
   output: 'standalone',
+  // Désactiver complètement le prerendering pour éviter les erreurs
+  generateStaticParams: false,
 }
 
 module.exports = nextConfig
