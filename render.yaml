@@ -8,8 +8,8 @@ services:
     env: node
     region: frankfurt
     plan: starter
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: NODE_ENV=production npm install && NODE_ENV=production npm run build
+    startCommand: NODE_ENV=production npm start
     healthCheckPath: /
     # Forcer le mode serveur (pas d'export statique)
     runtime: node
@@ -77,6 +77,8 @@ services:
 # 🔧 Variables d'environnement partagées
 # Ces variables doivent être configurées dans le dashboard Render
 envVars:
+  - key: NODE_ENV
+    value: production
   - key: MONGODB_URI
     description: "URI de connexion MongoDB Atlas"
   - key: JWT_SECRET
