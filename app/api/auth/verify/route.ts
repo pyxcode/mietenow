@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
 import connectDB from '@/lib/mongodb'
 import { User } from '@/models'
 
@@ -23,8 +22,9 @@ export async function GET(req: NextRequest) {
 
     const token = authHeader.substring(7) // Enlever "Bearer "
 
-    // Vérifier le token JWT
-    const decoded = jwt.verify(token, JWT_SECRET!) as any
+      // Vérifier le token JWT
+      const { verifyToken } = await import('@/lib/auth')
+      const decoded = await verifyToken(token)
 
     // Connexion à la base de données
     await connectDB()

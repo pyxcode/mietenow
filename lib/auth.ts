@@ -1,5 +1,5 @@
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
+import { SignJWT, jwtVerify } from 'jose'
 import { IUser } from '@/models/User'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key'
@@ -12,21 +12,24 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword)
 }
 
-export function generateToken(user: IUser): string {
-  return jwt.sign(
-    { 
-      userId: user._id, 
-      email: user.email,
-      plan: user.plan 
-    },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  )
+export async function generateToken(user: IUser): Promise<string> {
+  const secret = new TextEncoder().encode(JWT_SECRET)
+  return new SignJWT({ 
+    userId: user._id, 
+    email: user.email,
+    plan: user.plan 
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('7d')
+    .setIssuedAt()
+    .sign(secret)
 }
 
-export function verifyToken(token: string): any {
+export async function verifyToken(token: string): Promise<any> {
   try {
-    return jwt.verify(token, JWT_SECRET)
+    const secret = new TextEncoder().encode(JWT_SECRET)
+    const { payload } = await jwtVerify(token, secret)
+    return payload
   } catch (error) {
     return null
   }

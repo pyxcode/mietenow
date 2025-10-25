@@ -186,7 +186,7 @@ function StableMarkersLayer({
               <p style="font-weight: bold; font-size: 14px; margin: 0 0 8px 0; color: #2563eb;">
                 ${typeof listing.price === 'number' ? `${listing.price} €` : listing.price}
               </p>
-              <button onclick="window.selectListing && window.selectListing('${listing.id}')" 
+              <button onclick="if (typeof window !== 'undefined' && window.selectListing) window.selectListing('${listing.id}')" 
                       style="width: 100%; background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
                 View Details
               </button>
@@ -309,7 +309,7 @@ function StableMarkersLayer({
               <p style="font-weight: bold; font-size: 14px; margin: 0 0 8px 0; color: #2563eb;">
                 ${typeof listing.price === 'number' ? `${listing.price} €` : listing.price}
               </p>
-              <button onclick="window.selectListing && window.selectListing('${listing.id}')" 
+              <button onclick="if (typeof window !== 'undefined' && window.selectListing) window.selectListing('${listing.id}')" 
                       style="width: 100%; background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
                 View Details
               </button>
