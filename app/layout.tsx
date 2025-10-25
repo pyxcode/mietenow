@@ -89,6 +89,13 @@ export default function RootLayout({
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#004AAD" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body className={`${inter.className} antialiased`}>
+        <LanguageProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </LanguageProvider>
         
         {/* Crisp Chat - Client-side only with proper async context */}
         <script
@@ -116,13 +123,6 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className={`${inter.className} antialiased`}>
-        <LanguageProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </LanguageProvider>
       </body>
     </html>
   )

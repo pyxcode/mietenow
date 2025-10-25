@@ -1,15 +1,13 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import SimpleHeader from '@/components/SimpleHeader'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-export default function PaymentSuccess() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const plan = searchParams.get('plan')
@@ -305,5 +303,20 @@ export default function PaymentSuccess() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-gray-600">Loading payment success...</p>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }

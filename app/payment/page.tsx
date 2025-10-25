@@ -1,8 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { ChevronLeft, Check, Star, ArrowRight } from 'lucide-react'
@@ -13,7 +11,7 @@ import Footer from '@/components/Footer'
 import PaymentForm from '@/components/PaymentForm'
 import { useSearchParams } from 'next/navigation'
 
-export default function PaymentPage() {
+function PaymentPageContent() {
   const { language } = useLanguage()
   const { user } = useAuth()
   const searchParams = useSearchParams()
@@ -480,5 +478,20 @@ export default function PaymentPage() {
       {/* Footer */}
       <Footer />
     </div>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-gray-600">Loading payment page...</p>
+        </div>
+      </div>
+    }>
+      <PaymentPageContent />
+    </Suspense>
   )
 }
