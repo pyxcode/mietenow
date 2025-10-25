@@ -90,20 +90,28 @@ export default function RootLayout({
         <meta name="theme-color" content="#004AAD" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         
-        {/* Crisp Chat - Client-side only */}
+        {/* Crisp Chat - Client-side only with proper async context */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if (typeof window !== 'undefined') {
-                window.$crisp=[];
-                window.CRISP_WEBSITE_ID="e9057db7-b421-440c-8276-ce74d7f617e7";
-                (function(){
-                  d=document;
-                  s=d.createElement("script");
+                // Ensure we're in the correct execution context
+                const initCrisp = () => {
+                  window.$crisp=[];
+                  window.CRISP_WEBSITE_ID="e9057db7-b421-440c-8276-ce74d7f617e7";
+                  const d = document;
+                  const s = d.createElement("script");
                   s.src="https://client.crisp.chat/l.js";
                   s.async=1;
                   d.getElementsByTagName("head")[0].appendChild(s);
-                })();
+                };
+                
+                // Use requestAnimationFrame to ensure proper context
+                if (window.requestAnimationFrame) {
+                  window.requestAnimationFrame(initCrisp);
+                } else {
+                  setTimeout(initCrisp, 0);
+                }
               }
             `,
           }}

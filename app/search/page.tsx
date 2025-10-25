@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Search, MapPin, Euro, Home, Filter, Loader2, Bell, Info } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -9,9 +11,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import 'leaflet/dist/leaflet.css'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 
-const MapComponent = dynamic(() => import('@/components/MapComponent'), {
+const MapComponent = dynamicImport(() => import('@/components/MapComponent'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-gray-200 flex items-center justify-center">
