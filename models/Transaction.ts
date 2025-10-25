@@ -60,7 +60,7 @@ const TransactionSchema = new Schema<ITransaction>({
 
 // Index pour optimiser les recherches
 TransactionSchema.index({ user_id: 1 })
-TransactionSchema.index({ stripe_id: 1 })
+// stripe_id a déjà unique: true, pas besoin d'index explicite
 TransactionSchema.index({ payment_status: 1 })
 TransactionSchema.index({ plan: 1 })
 TransactionSchema.index({ expires_at: 1 })

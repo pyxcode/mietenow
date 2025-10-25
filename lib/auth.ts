@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import { IUser } from '@/models/User'

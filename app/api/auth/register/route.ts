@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const runtime = 'nodejs'
+
 import bcrypt from 'bcryptjs'
 import connectDB from '@/lib/mongodb'
 import { User } from '@/models'
-
-export const runtime = 'nodejs'
 
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {

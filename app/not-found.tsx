@@ -1,34 +1,26 @@
-'use client'
-
 import Link from 'next/link'
-import { useLanguage } from '@/contexts/LanguageContext'
+import Image from 'next/image'
+
+export const dynamic = 'force-dynamic'
 
 export default function NotFound() {
-  const { language } = useLanguage()
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center px-4">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-white mb-4">404</h1>
-        <h2 className="text-2xl font-semibold text-blue-200 mb-8">
-          {language === 'de' 
-            ? 'Seite nicht gefunden'
-            : 'Page not found'
-          }
-        </h2>
-        <p className="text-gray-300 mb-8">
-          {language === 'de'
-            ? 'Die gesuchte Seite existiert nicht.'
-            : 'The page you are looking for does not exist.'
-          }
-        </p>
-        <Link
-          href="/"
-          className="bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
-        >
-          {language === 'de' ? 'Zurück zur Startseite' : 'Back to Home'}
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col items-center justify-center text-white p-4">
+      <Image
+        src="/Logos/L1.png"
+        alt="MieteNow Logo"
+        width={150}
+        height={150}
+        className="mb-8"
+      />
+      <h1 className="text-6xl font-bold mb-4">404</h1>
+      <h2 className="text-2xl mb-8 text-center">Page non trouvée</h2>
+      <p className="text-lg text-center mb-12">
+        Désolé, la page que vous recherchez n'existe pas.
+      </p>
+      <Link href="/" className="bg-[#00BFA6] hover:bg-[#00A693] text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors duration-200">
+        Retour à l'accueil
+      </Link>
     </div>
   )
 }

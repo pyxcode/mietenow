@@ -134,7 +134,6 @@ const ListingSchema = new Schema<IListing>({
     type: String,
     required: true,
     unique: true,
-    index: true
   },
   provider: {
     type: String,
@@ -199,7 +198,7 @@ ListingSchema.index({ type: 1 })
 ListingSchema.index({ is_active: 1 })
 ListingSchema.index({ available_from: 1 })
 ListingSchema.index({ created_at: -1 })
-ListingSchema.index({ provider: 1 })
+// provider est déjà couvert par l'index composé { provider: 1, external_id: 1 }
 ListingSchema.index({ last_checked: 1 })
 
 // Index géospatial pour la carte
