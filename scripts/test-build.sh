@@ -7,11 +7,11 @@ rm -rf out
 
 # Installer les dépendances
 echo "📦 Installation des dépendances..."
-NODE_ENV=production npm ci
+npm ci
 
 # Lancer le build
 echo "🏗️ Lancement du build..."
-NODE_ENV=production npm run build
+npm run build
 
 # Vérifier le statut du build
 BUILD_STATUS=$?

@@ -14,8 +14,6 @@ services:
     # Mode serveur uniquement (pas de prerendering)
     runtime: node
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: NEXT_PUBLIC_APP_URL
         fromService:
           type: web
@@ -31,9 +29,7 @@ services:
     schedule: "0 6,12,18 * * *"  # 3 fois par jour : 6h, 12h, 18h
     buildCommand: npm install
     startCommand: node scripts/cron-scraping-standalone.js
-    envVars:
-      - key: NODE_ENV
-        value: production
+    envVars: []
 
   # 🧹 Cron Job - Nettoyage des anciennes annonces
   - type: cron
@@ -44,9 +40,7 @@ services:
     schedule: "0 2 * * *"  # Tous les jours à 2h du matin
     buildCommand: npm install
     startCommand: node scripts/cron-cleanup-standalone.js
-    envVars:
-      - key: NODE_ENV
-        value: production
+    envVars: []
 
   # 📧 Cron Job - Envoi des alertes
   - type: cron
@@ -57,9 +51,7 @@ services:
     schedule: "0 8,20 * * *"  # 2 fois par jour : 8h et 20h
     buildCommand: npm install
     startCommand: node scripts/cron-send-alerts.js
-    envVars:
-      - key: NODE_ENV
-        value: production
+    envVars: []
 
   # 💰 Cron Job - Vérification des plans
   - type: cron
@@ -70,15 +62,11 @@ services:
     schedule: "0 1 * * *"  # Tous les jours à 1h du matin
     buildCommand: npm install
     startCommand: node scripts/cron-check-plans.js
-    envVars:
-      - key: NODE_ENV
-        value: production
+    envVars: []
 
 # 🔧 Variables d'environnement partagées
 # Ces variables doivent être configurées dans le dashboard Render
 envVars:
-  - key: NODE_ENV
-    value: production
   - key: MONGODB_URI
     description: "URI de connexion MongoDB Atlas"
   - key: JWT_SECRET

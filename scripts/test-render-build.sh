@@ -8,7 +8,7 @@ rm -rf node_modules
 
 # Installer les dépendances en mode production
 echo "📦 Installation des dépendances en mode production..."
-export NODE_ENV=production
+# NODE_ENV sera défini automatiquement par Render
 npm ci
 
 # Lancer le build
