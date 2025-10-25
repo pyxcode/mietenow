@@ -31,7 +31,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    // Fallback pour le prerendering côté serveur
+    return {
+      user: null,
+      loading: false,
+      login: async () => ({ success: false, error: 'Not available during prerendering' }),
+      register: async () => ({ success: false, error: 'Not available during prerendering' }),
+      logout: () => {},
+      updateUser: () => {}
+    }
   }
   return context
 }

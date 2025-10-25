@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Image from 'next/image'
@@ -14,6 +15,12 @@ export default function HomePage() {
   const { t, language } = useTranslation()
   const { user } = useAuth()
   const [showPlanModal, setShowPlanModal] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+
+  // S'assurer qu'on est côté client
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Fonction pour gérer le clic sur le bouton de recherche
   const handleSearchClick = () => {
