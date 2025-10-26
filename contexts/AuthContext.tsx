@@ -52,6 +52,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Fonctions pour gérer les cookies
+  const setCookie = (name: string, value: string, days: number) => {
+    const expires = new Date()
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000))
+    document.cookie = `${name}=${value}; expires=${expires.toUTCString()}; path=/; secure; samesite=strict`
+  }
+
+  const getCookie = (name: string): string | null => {
+    const nameEQ = name + "="
+    const ca = document.cookie.split(';')
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i]
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length)
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
+    }
+    return null
+  }
+
+  const deleteCookie = (name: string) => {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+  }
+
   // Vérifier si l'utilisateur est connecté au chargement
   useEffect(() => {
     checkAuthStatus()
@@ -59,7 +81,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('authToken')
+      // Essayer d'abord localStorage, puis cookies
+      let token = localStorage.getItem('authToken')
+      if (!token) {
+        token = getCookie('authToken')
+      }
+      
       if (!token) {
         setLoading(false)
         return
@@ -75,12 +102,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const data = await response.json()
         setUser(data.user)
       } else {
-        // Token invalide, le supprimer
+        // Token invalide, le supprimer de localStorage ET cookies
         localStorage.removeItem('authToken')
+        localStorage.removeItem('userId')
+        deleteCookie('authToken')
+        deleteCookie('userId')
       }
     } catch (error) {
       console.error('Erreur lors de la vérification de l\'authentification:', error)
       localStorage.removeItem('authToken')
+      localStorage.removeItem('userId')
+      deleteCookie('authToken')
+      deleteCookie('userId')
     } finally {
       setLoading(false)
     }
@@ -99,8 +132,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json()
 
       if (response.ok) {
+        // Sauvegarder dans localStorage ET cookies
         localStorage.setItem('authToken', data.token)
         localStorage.setItem('userId', data.user.id)
+        setCookie('authToken', data.token, 30) // 30 jours
+        setCookie('userId', data.user.id, 30)
         setUser(data.user)
         return { success: true }
       } else {
@@ -125,8 +161,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json()
 
       if (response.ok) {
+        // Sauvegarder dans localStorage ET cookies
         localStorage.setItem('authToken', data.token)
         localStorage.setItem('userId', data.user.id)
+        setCookie('authToken', data.token, 30) // 30 jours
+        setCookie('userId', data.user.id, 30)
         setUser(data.user)
         return { success: true }
       } else {
@@ -139,7 +178,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   const logout = () => {
+    // Supprimer de localStorage ET cookies
     localStorage.removeItem('authToken')
+    localStorage.removeItem('userId')
+    deleteCookie('authToken')
+    deleteCookie('userId')
     setUser(null)
   }
 

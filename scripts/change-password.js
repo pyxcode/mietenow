@@ -29,10 +29,10 @@ const User = mongoose.model('User', userSchema);
 
 async function changePassword() {
   try {
-    // Connexion à MongoDB
-    const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://louan:louan@cluster0.4qj8x.mongodb.net/mietenow-prod?retryWrites=true&w=majority';
-    await mongoose.connect(mongoUri);
-    console.log('✅ Connecté à MongoDB');
+    // Connexion directe au shard PRIMARY (00-01)
+    const primaryUri = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-01.6srfa0f.mongodb.net:27017/mietenow-prod?authSource=admin&ssl=true';
+    await mongoose.connect(primaryUri);
+    console.log('✅ Connecté à MongoDB - Base: mietenow-prod');
 
     // Lister tous les utilisateurs
     const users = await User.find({}, 'email firstName lastName plan').limit(10);

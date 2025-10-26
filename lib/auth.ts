@@ -22,7 +22,7 @@ export async function generateToken(user: IUser): Promise<string> {
     plan: user.plan 
   })
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('7d')
+    .setExpirationTime('30d')
     .setIssuedAt()
     .sign(secret)
 }

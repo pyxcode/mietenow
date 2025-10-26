@@ -31,16 +31,11 @@ function log(message) {
 
 async function connectDB() {
   try {
-    const mongoUri = process.env.MONGODB_URI
-    if (!mongoUri) {
-      throw new Error('MONGODB_URI not found in environment variables')
-    }
+    // Connexion directe au shard PRIMARY pour le scraping
+    const primaryUri = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-01.6srfa0f.mongodb.net:27017/mietenow-prod?authSource=admin&ssl=true'
     
-    const baseUri = mongoUri.endsWith('/') ? mongoUri.slice(0, -1) : mongoUri
-    const fullUri = `${baseUri}/mietenow-prod`
-    
-    await mongoose.connect(fullUri)
-    log('✅ Connecté à MongoDB')
+    await mongoose.connect(primaryUri)
+    log('✅ Connecté à MongoDB - Base: mietenow-prod')
   } catch (error) {
     log(`❌ Erreur de connexion MongoDB: ${error.message}`)
     throw error

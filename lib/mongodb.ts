@@ -5,11 +5,9 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mieten
 // Forcer l'utilisation de la base mietenow-prod pour le cloud
 const getMongoUri = () => {
   if (process.env.MONGODB_URI && process.env.MONGODB_URI.includes('mongodb+srv://')) {
-    // Si c'est une URI cloud, ajouter le nom de la base
-    const baseUri = process.env.MONGODB_URI.endsWith('/') 
-      ? process.env.MONGODB_URI.slice(0, -1) 
-      : process.env.MONGODB_URI
-    return `${baseUri}/mietenow-prod`
+    // Convertir mongodb+srv:// vers mongodb:// direct pour éviter les problèmes DNS
+    const directUri = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
+    return directUri
   }
   return MONGODB_URI
 }
