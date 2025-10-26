@@ -6,7 +6,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mieten
 const getMongoUri = () => {
   if (process.env.MONGODB_URI && process.env.MONGODB_URI.includes('mongodb+srv://')) {
     // Convertir mongodb+srv:// vers mongodb:// direct pour éviter les problèmes DNS
-    const directUri = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
+    const directUri = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-01.6srfa0f.mongodb.net:27017/mietenow-prod?authSource=admin&ssl=true'
     return directUri
   }
   return MONGODB_URI
