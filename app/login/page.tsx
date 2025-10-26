@@ -11,8 +11,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import SimpleHeader from '@/components/SimpleHeader'
 
-export const dynamic = 'force-dynamic'
-
 export default function LoginPage() {
   const { language } = useLanguage()
   const { data: session, status } = useSession()
