@@ -26,8 +26,9 @@ const nextConfig = {
       'puppeteer-extra': 'commonjs puppeteer-extra',
       'puppeteer-extra-plugin-stealth': 'commonjs puppeteer-extra-plugin-stealth',
     })
-    // Désactiver Terser
+    // Désactiver Terser et les source maps
     config.optimization.minimize = false
+    config.devtool = false // Désactiver les source maps
     return config
   },
   // Désactiver les optimisations qui causent des problèmes

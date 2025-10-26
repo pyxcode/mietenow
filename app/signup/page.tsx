@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useAuth } from '@/contexts/AuthContext'
+import { signIn } from 'next-auth/react'
 import { ChevronLeft, Mail, Lock, User } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic'
 
 export default function SignupPage() {
   const { language } = useLanguage()
-  const { register } = useAuth()
   const router = useRouter()
   const [formData, setFormData] = useState({
     name: '',
@@ -52,13 +51,31 @@ export default function SignupPage() {
       return
     }
 
-    const result = await register(firstName, lastName, formData.email, formData.password)
-    
-    if (result.success) {
-      // Rediriger vers la page de paiement après création du compte
-      router.push('/payment')
-    } else {
-      setError(result.error || (language === 'de' ? 'Ein Fehler ist aufgetreten' : 'An error occurred'))
+    try {
+      // Appeler l'API de création de compte
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email: formData.email,
+          password: formData.password
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Rediriger vers la page de paiement après création du compte
+        router.push('/payment')
+      } else {
+        setError(result.error || (language === 'de' ? 'Ein Fehler ist aufgetreten' : 'An error occurred'))
+      }
+    } catch (error) {
+      setError(language === 'de' ? 'Ein Fehler ist aufgetreten' : 'An error occurred')
     }
     
     setLoading(false)

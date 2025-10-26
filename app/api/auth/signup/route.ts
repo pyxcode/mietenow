@@ -49,23 +49,26 @@ export async function POST(request: NextRequest) {
 
     // Créer l'utilisateur
     const user = new User({
-      firstName,
-      lastName,
-      email,
+      first_name: firstName,
+      last_name: lastName,
+      email: email.toLowerCase(),
       password: hashedPassword,
-      address,
-      searchCriteria: {
+      plan: 'empty',
+      subscription_status: 'inactive',
+      search_preferences: {
         city: city || 'Berlin',
-        minPrice: minPrice ? parseInt(minPrice) : undefined,
-        maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
-        minRooms: minRooms ? parseInt(minRooms) : undefined,
-        maxRooms: maxRooms ? parseInt(maxRooms) : undefined,
-        minBedrooms: minBedrooms ? parseInt(minBedrooms) : undefined,
-        maxBedrooms: maxBedrooms ? parseInt(maxBedrooms) : undefined,
-        minSize: minSize ? parseInt(minSize) : undefined,
-        maxSize: maxSize ? parseInt(maxSize) : undefined,
-        propertyType: propertyType || [],
-        furnishing: furnishing || []
+        min_price: minPrice ? parseInt(minPrice) : undefined,
+        max_price: maxPrice ? parseInt(maxPrice) : undefined,
+        min_rooms: minRooms ? parseInt(minRooms) : undefined,
+        max_rooms: maxRooms ? parseInt(maxRooms) : undefined,
+        min_bedrooms: minBedrooms ? parseInt(minBedrooms) : undefined,
+        max_bedrooms: maxBedrooms ? parseInt(maxBedrooms) : undefined,
+        min_surface: minSize ? parseInt(minSize) : undefined,
+        max_surface: maxSize ? parseInt(maxSize) : undefined,
+        type: propertyType || 'Any',
+        furnishing: furnishing || 'Any',
+        address: address || '',
+        radius: 5
       }
     })
 
@@ -76,10 +79,10 @@ export async function POST(request: NextRequest) {
       message: 'Compte créé avec succès',
       user: {
         id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.first_name,
+        lastName: user.last_name,
         email: user.email,
-        subscription: user.subscription
+        plan: user.plan
       }
     })
 
