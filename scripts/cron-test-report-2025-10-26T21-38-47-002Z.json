@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Scraping Standalone",
+    "script": "cron-scraping-standalone.js",
+    "description": "Scraping des annonces immobilières",
+    "success": false,
+    "output": "[dotenv@17.2.3] injecting env (14) from .env.local -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }\n[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild\n[2025-10-26T21:37:14.554Z] 🚀 Début du cron de scraping standalone - 2025-10-26T21:37:14.554Z\n[2025-10-26T21:37:15.062Z] ✅ Connecté à MongoDB - Base: mietenow-prod\n[2025-10-26T21:37:15.062Z] 🔍 Vérification du statut des annonces...\n[2025-10-26T21:37:15.955Z] ✅ Annonce 68f8b12cf66e5d1901e1fdd5 vérifiée: HTTP 200\n[2025-10-26T21:37:17.369Z] ✅ Annonce 68f8b2766cddf804451ad2cc vérifiée: HTTP 200\n[2025-10-26T21:37:18.693Z] ✅ Annonce 68f8b2766cddf804451ad2d2 vérifiée: HTTP 200\n[2025-10-26T21:37:20.376Z] ✅ Annonce 68f8b5a419d4fdfab8cd7794 vérifiée: HTTP 200\n[2025-10-26T21:37:21.732Z] ✅ Annonce 68f8bb2c6d6f7bda01ad904c vérifiée: HTTP 200\n[2025-10-26T21:37:23.109Z] ✅ Annonce 68f8bb5a7d0b1ba5c155e6e8 vérifiée: HTTP 200\n[2025-10-26T21:37:24.551Z] ✅ Annonce 68f8c2ba0c7660d6a82a8eca vérifiée: HTTP 200\n[2025-10-26T21:37:25.846Z] ✅ Annonce 68f8c2ba0c7660d6a82a8ed5 vérifiée: HTTP 200\n[2025-10-26T21:37:27.210Z] ✅ Annonce 68f8b12cf66e5d1901e1fdca vérifiée: HTTP 200\n[2025-10-26T21:37:28.525Z] ✅ Annonce 68f8b2766cddf804451ad2c4 vérifiée: HTTP 200\n[2025-10-26T21:37:29.852Z] ✅ Annonce 68f8b2766cddf804451ad2cd vérifiée: HTTP 200\n[2025-10-26T21:37:31.169Z] ✅ Annonce 68f8b2766cddf804451ad2d0 vérifiée: HTTP 200\n[2025-10-26T21:37:32.766Z] ✅ Annonce 68f8b5a419d4fdfab8cd7781 vérifiée: HTTP 200\n[2025-10-26T21:37:34.085Z] ✅ Annonce 68f8bb2c6d6f7bda01ad9044 vérifiée: HTTP 200\n[2025-10-26T21:37:35.417Z] ✅ Annonce 68f8bb2c6d6f7bda01ad9045 vérifiée: HTTP 200\n[2025-10-26T21:37:36.815Z] ✅ Annonce 68f8bb5a7d0b1ba5c155e6e7 vérifiée: HTTP 200\n[2025-10-26T21:37:38.308Z] ✅ Annonce 68f8bb5a7d0b1ba5c155e6eb vérifiée: HTTP 200\n[2025-10-26T21:37:39.992Z] ✅ Annonce 68f8c2ba0c7660d6a82a8ecf vérifiée: HTTP 200\n[2025-10-26T21:37:41.376Z] ✅ Annonce 68f8c2ba0c7660d6a82a8ed7 vérifiée: HTTP 200\n[2025-10-26T21:37:42.712Z] ✅ Annonce 68f8c2ba0c7660d6a82a8edd vérifiée: HTTP 200\n",
+    "errorOutput": "(node:2918) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/louan/Desktop/PROJETS/mietenow/lib/scrapers/providers/wg-gesucht-scraper.js is not specified and it doesn't parse as CommonJS.\nReparsing as ES module because module syntax was detected. This incurs a performance overhead.\nTo eliminate this warning, add \"type\": \"module\" to /Users/louan/Desktop/PROJETS/mietenow/package.json.\n(Use `node --trace-warnings ...` to show where the warning was created)\n",
+    "timeout": true
+  },
+  {
+    "name": "Cleanup Standalone",
+    "script": "cron-cleanup-standalone.js",
+    "description": "Nettoyage des anciennes annonces",
+    "success": false,
+    "output": "[dotenv@17.2.3] injecting env (14) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops\n[2025-10-26T21:37:44.353Z] 🚀 Début du cron de cleanup standalone - 2025-10-26T21:37:44.352Z\n[2025-10-26T21:37:44.802Z] ✅ Connecté à MongoDB\n[2025-10-26T21:37:44.803Z] 🔍 Vérification des annonces 404/erreur...\n[2025-10-26T21:37:45.681Z] ✅ Annonce 68f8b12cf66e5d1901e1fdd5 vérifiée: HTTP 200\n[2025-10-26T21:37:47.165Z] ✅ Annonce 68f8b2766cddf804451ad2cc vérifiée: HTTP 200\n[2025-10-26T21:37:48.588Z] ✅ Annonce 68f8b2766cddf804451ad2d2 vérifiée: HTTP 200\n[2025-10-26T21:37:50.061Z] ✅ Annonce 68f8b5a419d4fdfab8cd7794 vérifiée: HTTP 200\n[2025-10-26T21:37:51.436Z] ✅ Annonce 68f8bb2c6d6f7bda01ad904c vérifiée: HTTP 200\n[2025-10-26T21:37:52.807Z] ✅ Annonce 68f8bb5a7d0b1ba5c155e6e8 vérifiée: HTTP 200\n[2025-10-26T21:37:54.299Z] ✅ Annonce 68f8c2ba0c7660d6a82a8eca vérifiée: HTTP 200\n[2025-10-26T21:37:55.635Z] ✅ Annonce 68f8c2ba0c7660d6a82a8ed5 vérifiée: HTTP 200\n[2025-10-26T21:37:56.958Z] ✅ Annonce 68f8b12cf66e5d1901e1fdca vérifiée: HTTP 200\n[2025-10-26T21:37:58.258Z] ✅ Annonce 68f8b2766cddf804451ad2c4 vérifiée: HTTP 200\n[2025-10-26T21:37:59.870Z] ✅ Annonce 68f8b2766cddf804451ad2cd vérifiée: HTTP 200\n[2025-10-26T21:38:01.188Z] ✅ Annonce 68f8b2766cddf804451ad2d0 vérifiée: HTTP 200\n[2025-10-26T21:38:02.520Z] ✅ Annonce 68f8b5a419d4fdfab8cd7781 vérifiée: HTTP 200\n[2025-10-26T21:38:03.893Z] ✅ Annonce 68f8bb2c6d6f7bda01ad9044 vérifiée: HTTP 200\n[2025-10-26T21:38:05.430Z] ✅ Annonce 68f8bb2c6d6f7bda01ad9045 vérifiée: HTTP 200\n[2025-10-26T21:38:06.803Z] ✅ Annonce 68f8bb5a7d0b1ba5c155e6e7 vérifiée: HTTP 200\n[2025-10-26T21:38:08.302Z] ✅ Annonce 68f8bb5a7d0b1ba5c155e6eb vérifiée: HTTP 200\n[2025-10-26T21:38:09.767Z] ✅ Annonce 68f8c2ba0c7660d6a82a8ecf vérifiée: HTTP 200\n[2025-10-26T21:38:11.086Z] ✅ Annonce 68f8c2ba0c7660d6a82a8ed7 vérifiée: HTTP 200\n[2025-10-26T21:38:12.441Z] ✅ Annonce 68f8c2ba0c7660d6a82a8edd vérifiée: HTTP 200\n[2025-10-26T21:38:14.087Z] ✅ Annonce 68f8b12cf66e5d1901e1fde0 vérifiée: HTTP 200\n",
+    "errorOutput": "",
+    "timeout": true
+  },
+  {
+    "name": "Send Alerts",
+    "script": "cron-send-alerts.js",
+    "description": "Envoi des alertes par email",
+    "success": false,
+    "output": "",
+    "errorOutput": "node:internal/modules/cjs/loader:1423\n  throw err;\n  ^\n\nError: Cannot find module './send-alerts-direct.js'\nRequire stack:\n- /Users/louan/Desktop/PROJETS/mietenow/scripts/cron-send-alerts.js\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\n    at Module._load (node:internal/modules/cjs/loader:1226:37)\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (node:internal/modules/helpers:152:16)\n    at Object.<anonymous> (/Users/louan/Desktop/PROJETS/mietenow/scripts/cron-send-alerts.js:3:29)\n    at Module._compile (node:internal/modules/cjs/loader:1760:14) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [\n    '/Users/louan/Desktop/PROJETS/mietenow/scripts/cron-send-alerts.js'\n  ]\n}\n\nNode.js v24.10.0\n",
+    "code": 1
+  },
+  {
+    "name": "Check Plans",
+    "script": "cron-check-plans.js",
+    "description": "Vérification des plans utilisateurs",
+    "success": true,
+    "output": "[dotenv@17.2.3] injecting env (14) from .env.local -- tip: ⚙️  override existing env vars with { override: true }\n\n🚀 Début de la vérification des plans - 2025-10-26T21:38:14.377Z\n✅ Connecté à MongoDB\n\n🔍 Vérification des plans expirés - 2025-10-26T21:38:15.061Z\n📧 0 utilisateurs avec des plans qui expirent bientôt\n⏰ 0 utilisateurs avec des plans expirés\n\n📊 Statistiques des plans:\n   Total utilisateurs: 4\n   Plans actifs: 1\n   Plans expirés: 0\n   Plans annulés: 0\n\n✅ Vérification terminée avec succès\n   Plans expirant bientôt: 0\n   Plans expirés: 0\n   Plans mis à jour: 0\n📧 Envoi des notifications d'expiration...\n✅ Notifications envoyées\n\n⏱️  Durée totale: 1143ms\n🏁 Fin de la vérification - 2025-10-26T21:38:15.520Z\n✅ Déconnecté de MongoDB\n",
+    "errorOutput": ""
+  },
+  {
+    "name": "Send Unpaid",
+    "script": "cron-send-unpaid.js",
+    "description": "Emails de paiement impayé",
+    "success": false,
+    "output": "",
+    "errorOutput": "node:internal/modules/cjs/loader:1423\n  throw err;\n  ^\n\nError: Cannot find module './send-unpaid-direct.js'\nRequire stack:\n- /Users/louan/Desktop/PROJETS/mietenow/scripts/cron-send-unpaid.js\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\n    at Module._load (node:internal/modules/cjs/loader:1226:37)\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (node:internal/modules/helpers:152:16)\n    at Object.<anonymous> (/Users/louan/Desktop/PROJETS/mietenow/scripts/cron-send-unpaid.js:3:34)\n    at Module._compile (node:internal/modules/cjs/loader:1760:14) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [\n    '/Users/louan/Desktop/PROJETS/mietenow/scripts/cron-send-unpaid.js'\n  ]\n}\n\nNode.js v24.10.0\n",
+    "code": 1
+  },
+  {
+    "name": "Daily Cleanup",
+    "script": "cron-daily-cleanup.js",
+    "description": "Nettoyage quotidien simple",
+    "success": true,
+    "output": "[2025-10-26T21:38:15.590Z] 🕐 Starting daily cleanup cron job...\n[2025-10-26T21:38:15.592Z] 🧹 Starting daily cleanup of expired listings...\n[2025-10-26T21:38:15.592Z] 🔍 Checking listing statuses to identify 404/error listings...\n[2025-10-26T21:38:16.426Z] ✅ Status check completed: 100 checked, 0 removed (404/errors)\n[2025-10-26T21:38:16.426Z] 🗑️ Removing listings older than 30 days...\n[2025-10-26T21:38:16.996Z] ✅ Old listings cleanup: 0 removed (older than 30 days)\n[2025-10-26T21:38:16.997Z] 📊 Cleanup summary:\n[2025-10-26T21:38:16.997Z]    - 404/Error listings removed: 0\n[2025-10-26T21:38:16.997Z]    - Old listings removed (>30 days): 0\n[2025-10-26T21:38:16.997Z]    - Total removed: 0\n[2025-10-26T21:38:16.998Z] 🎉 Daily cleanup completed successfully in 1s\n[2025-10-26T21:38:16.998Z] 📊 Summary: cleanup OK\n",
+    "errorOutput": ""
+  },
+  {
+    "name": "Hourly Simple",
+    "script": "cron-hourly-simple.js",
+    "description": "Tâches horaires simples",
+    "success": false,
+    "output": "[2025-10-26T21:38:17.033Z] 🕐 Starting hourly cron job...\n[2025-10-26T21:38:17.036Z] 🔍 Checking listing statuses...\n[2025-10-26T21:38:17.198Z] ✅ Status check completed\n[2025-10-26T21:38:17.198Z] 📊 Checked: 0\n[2025-10-26T21:38:17.198Z] ❌ Removed: 0\n[2025-10-26T21:38:17.199Z] 🚀 Starting hourly scraping...\n",
+    "errorOutput": "",
+    "timeout": true
+  }
+]

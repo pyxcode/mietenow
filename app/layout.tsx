@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
-import { AuthProvider } from '@/contexts/AuthContext'
-import { LanguageProvider } from '@/contexts/LanguageContext'
-import CrispChat from '@/components/CrispChat'
+import ClientProviders from '@/components/ClientProviders'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -85,12 +83,9 @@ export default function RootLayout({
   return (
     <html lang="de" className={`${inter.variable} ${manrope.variable}`}>
       <body className={`${inter.className} antialiased`}>
-        <AuthProvider>
-          <LanguageProvider>
-            {children}
-            <CrispChat />
-          </LanguageProvider>
-        </AuthProvider>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
       </body>
     </html>
   )

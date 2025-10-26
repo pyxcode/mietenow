@@ -62,9 +62,21 @@ export function useUserPreferences() {
   }
 
   const savePreferences = async (step: string, newPreferences?: Partial<UserPreferences>) => {
+    // Si pas d'utilisateur connecté, sauvegarder temporairement dans localStorage
     if (!user) {
-      router.push('/login')
-      return false
+      try {
+        const tempPreferences = {
+          step,
+          preferences: newPreferences ? { ...preferences, ...newPreferences } : preferences,
+          timestamp: Date.now()
+        }
+        localStorage.setItem('temp_preferences', JSON.stringify(tempPreferences))
+        console.log('Préférences sauvegardées temporairement:', tempPreferences)
+        return true
+      } catch (error) {
+        console.error('Error saving temp preferences:', error)
+        return false
+      }
     }
 
     setLoading(true)
@@ -102,8 +114,20 @@ export function useUserPreferences() {
 
   const updatePreferences = async (newPreferences: Partial<UserPreferences>) => {
     if (!user) {
-      router.push('/login')
-      return false
+      // Si pas d'utilisateur connecté, sauvegarder temporairement dans localStorage
+      try {
+        const tempPreferences = {
+          step: 'criteria',
+          preferences: { ...preferences, ...newPreferences },
+          timestamp: Date.now()
+        }
+        localStorage.setItem('temp_preferences', JSON.stringify(tempPreferences))
+        console.log('Préférences mises à jour temporairement:', tempPreferences)
+        return true
+      } catch (error) {
+        console.error('Error updating temp preferences:', error)
+        return false
+      }
     }
 
     setLoading(true)

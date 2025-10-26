@@ -16,7 +16,7 @@ export const translations = {
         title: 'Finde deine Wohnung.',
         titleHighlight: 'Schneller.',
         titleEnd: '',
-        subtitle: 'Eine Plattform, alle Wohnungsangebote in Berlin.',
+        subtitle: 'Alle Wohnungsangebote, eine Platform.',
         features: [
           'Einheitliche Suche auf allen Plattformen',
           'Sofortige Benachrichtigungen per E-Mail und Telegram',

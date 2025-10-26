@@ -694,8 +694,8 @@ export default function SearchPage() {
                               : 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700'
                           }`}
                           title={isAlertActive 
-                            ? (language === 'de' ? 'Alerte activée - Cliquez pour désactiver' : 'Alert active - Click to deactivate')
-                            : (language === 'de' ? 'En cliquant ici, vous recevez des emails dès qu\'une nouvelle annonce qui satisfait ces critères est publiée' : 'Click here to receive emails when new listings matching these criteria are published')
+                            ? (language === 'de' ? 'Benachrichtigung aktiviert - Klicken Sie zum Deaktivieren' : 'Alert active - Click to deactivate')
+                            : (language === 'de' ? 'Klicken Sie hier, um E-Mails zu erhalten, sobald ein neues Angebot, das diesen Kriterien entspricht, veröffentlicht wird' : 'Click here to receive emails when new listings matching these criteria are published')
                           }
                         >
                           {isAlertActive ? (
@@ -705,8 +705,8 @@ export default function SearchPage() {
                           )}
                           <span>
                             {isAlertActive 
-                              ? (alertButtonText || (language === 'de' ? 'Mettre à jour mon alerte' : 'Update my alert'))
-                              : (language === 'de' ? 'Alerte email' : 'Email alert')
+                              ? (alertButtonText || (language === 'de' ? 'Meine Benachrichtigung aktualisieren' : 'Update my alert'))
+                              : (language === 'de' ? 'E-Mail-Benachrichtigung' : 'Email alert')
                             }
                           </span>
                           {!isAlertActive && <Info className="w-3 h-3" />}
@@ -714,8 +714,8 @@ export default function SearchPage() {
                           {/* Tooltip */}
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             {isAlertActive 
-                              ? (language === 'de' ? 'Cliquez pour mettre à jour les critères de votre alerte' : 'Click to update your alert criteria')
-                              : (language === 'de' ? 'Recevez des emails pour les nouvelles annonces correspondant à ces critères' : 'Get emails for new listings matching these criteria')
+                              ? (language === 'de' ? 'Klicken Sie hier, um Ihre Benachrichtigungskriterien zu aktualisieren' : 'Click to update your alert criteria')
+                              : (language === 'de' ? 'Erhalten Sie E-Mails für neue Angebote, die diesen Kriterien entsprechen' : 'Get emails for new listings matching these criteria')
                             }
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                           </div>

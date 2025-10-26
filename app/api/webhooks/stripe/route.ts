@@ -76,9 +76,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
     // Vérifier si l'utilisateur existe
     if (userId && userId !== 'anonymous') {
-      // Utiliser l'ID factice pour les tests
-      const testUserId = '507f1f77bcf86cd799439011'
-      const user = await User.findById(testUserId)
+      const user = await User.findById(userId)
       
       if (user) {
         // Calculer la date d'expiration basée sur le plan

@@ -20,13 +20,13 @@ services:
           name: mietenow-web
           property: host
 
-  # 🔄 Cron Job - Scraping quotidien
+  # 🔄 Cron Job - Scraping toutes les 5 minutes
   - type: cron
     name: mietenow-scraper
     env: node
     region: frankfurt
     plan: starter
-    schedule: "0 6,12,18 * * *"  # 3 fois par jour : 6h, 12h, 18h
+    schedule: "*/5 * * * *"  # Toutes les 5 minutes
     buildCommand: npm install
     startCommand: node scripts/cron-scraping-standalone.js
     envVars: []
@@ -42,16 +42,6 @@ services:
     startCommand: node scripts/cron-cleanup-standalone.js
     envVars: []
 
-  # 📧 Cron Job - Envoi des alertes
-  - type: cron
-    name: mietenow-alerts
-    env: node
-    region: frankfurt
-    plan: starter
-    schedule: "0 8,20 * * *"  # 2 fois par jour : 8h et 20h
-    buildCommand: npm install
-    startCommand: node scripts/cron-send-alerts.js
-    envVars: []
 
   # 💰 Cron Job - Vérification des plans
   - type: cron
@@ -62,6 +52,39 @@ services:
     schedule: "0 1 * * *"  # Tous les jours à 1h du matin
     buildCommand: npm install
     startCommand: node scripts/cron-check-plans.js
+    envVars: []
+
+  # 📧 Cron Job - Envoi des emails de paiement impayé
+  - type: cron
+    name: mietenow-unpaid
+    env: node
+    region: frankfurt
+    plan: starter
+    schedule: "0 9 * * 1"  # Tous les lundis à 9h
+    buildCommand: npm install
+    startCommand: node scripts/cron-send-unpaid.js
+    envVars: []
+
+  # 🧹 Cron Job - Nettoyage quotidien simple
+  - type: cron
+    name: mietenow-daily-cleanup
+    env: node
+    region: frankfurt
+    plan: starter
+    schedule: "0 3 * * *"  # Tous les jours à 3h du matin
+    buildCommand: npm install
+    startCommand: node scripts/cron-daily-cleanup.js
+    envVars: []
+
+  # ⚡ Cron Job - Tâches horaires simples
+  - type: cron
+    name: mietenow-hourly
+    env: node
+    region: frankfurt
+    plan: starter
+    schedule: "0 * * * *"  # Toutes les heures
+    buildCommand: npm install
+    startCommand: node scripts/cron-hourly-simple.js
     envVars: []
 
 # 🔧 Variables d'environnement partagées

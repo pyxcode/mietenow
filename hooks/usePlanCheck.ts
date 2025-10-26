@@ -1,59 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useSession } from 'next-auth/react'
 
 export function usePlanCheck() {
-  const { user } = useAuth()
-  const [isPlanValid, setIsPlanValid] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [planStatus, setPlanStatus] = useState<'empty' | 'active' | 'expired' | 'canceled'>('empty')
+  const { data: session, status } = useSession()
+  
+  const isLoading = status === 'loading'
+  const user = session?.user
 
-  useEffect(() => {
-    if (!user) {
-      setIsLoading(false)
-      setPlanStatus('empty')
-      return
-    }
+  const isPlanValid = user ? (
+    user.plan !== 'empty' && 
+    user.subscription_status === 'active' &&
+    (!user.plan_expires_at || new Date() <= new Date(user.plan_expires_at))
+  ) : false
 
-    // Vérifier le statut du plan
-    const checkPlanStatus = () => {
-      if (user.plan === 'empty') {
-        setIsPlanValid(false)
-        setPlanStatus('empty')
-      } else {
-        const now = new Date()
-        const planExpiry = (user as any).plan_expires_at ? new Date((user as any).plan_expires_at) : null
-        
-        // Vérifier le statut de l'abonnement
-        if ((user as any).subscription_status === 'canceled') {
-          setIsPlanValid(false)
-          setPlanStatus('canceled')
-        } else if ((user as any).subscription_status === 'expired') {
-          setIsPlanValid(false)
-          setPlanStatus('expired')
-        } else if (planExpiry && now > planExpiry) {
-          // Plan expiré par la date
-          setIsPlanValid(false)
-          setPlanStatus('expired')
-        } else {
-          // Plan actif
-          setIsPlanValid(true)
-          setPlanStatus('active')
-        }
-      }
-      setIsLoading(false)
-    }
-
-    checkPlanStatus()
-  }, [user])
+  const planStatus = user ? (
+    user.plan === 'empty' ? 'empty' :
+    user.subscription_status === 'canceled' ? 'canceled' :
+    user.subscription_status === 'expired' ? 'expired' :
+    user.plan_expires_at && new Date() > new Date(user.plan_expires_at) ? 'expired' : 'active'
+  ) : 'empty'
 
   // Fonction pour obtenir le temps restant
   const getTimeRemaining = () => {
-    if (!(user as any)?.plan_expires_at) return null
+    if (!user?.plan_expires_at) return null
     
     const now = new Date()
-    const expiry = new Date((user as any).plan_expires_at)
+    const expiry = new Date(user.plan_expires_at)
     const diff = expiry.getTime() - now.getTime()
     
     if (diff <= 0) return null
@@ -68,7 +41,7 @@ export function usePlanCheck() {
     isPlanValid,
     isLoading,
     userPlan: user?.plan || 'empty',
-    planExpiresAt: (user as any)?.plan_expires_at,
+    planExpiresAt: user?.plan_expires_at,
     planStatus,
     timeRemaining: getTimeRemaining(),
     isExpired: planStatus === 'expired',

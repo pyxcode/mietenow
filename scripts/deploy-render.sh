@@ -1,13 +1,21 @@
 #!/bin/bash
 
+# 🚀 Script de déploiement Render pour MieteNow
+# Ce script déploie l'application web et configure tous les cron jobs
+
 # Vérifier si le token API est défini
 if [ -z "$RENDER_API_KEY" ]; then
     echo "❌ RENDER_API_KEY n'est pas défini"
+    echo "💡 Définissez votre clé API Render : export RENDER_API_KEY=your_api_key"
     exit 1
 fi
 
-# ID du service (extrait de l'URL du dashboard)
-SERVICE_ID="srv-d3ue6bvdiees73e74g70"
+# IDs des services (extraits de l'URL du dashboard Render)
+WEB_SERVICE_ID="srv-d3ue6bvdiees73e74g70"  # Service web principal
+CRON_SCRAPER_ID="crn-xxxxx"  # À remplacer par l'ID réel du cron scraper
+CRON_CLEANUP_ID="crn-xxxxx"  # À remplacer par l'ID réel du cron cleanup
+CRON_ALERTS_ID="crn-xxxxx"  # À remplacer par l'ID réel du cron alerts
+CRON_PLANS_ID="crn-xxxxx"   # À remplacer par l'ID réel du cron plans
 
 # Fonction pour vérifier le statut du déploiement
 check_deploy_status() {

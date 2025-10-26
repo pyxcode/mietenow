@@ -1,16 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import SimpleHeader from '@/components/SimpleHeader'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
 export default function CriteriaPage() {
   const { language } = useLanguage()
+  const { savePreferences } = useUserPreferences()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(0)
   const [criteria, setCriteria] = useState({
     housingType: '',
@@ -18,6 +23,22 @@ export default function CriteriaPage() {
     minSurface: '',
     bedrooms: ''
   })
+
+  // Récupérer les prix depuis les paramètres URL et les sauvegarder
+  useEffect(() => {
+    const minPrice = searchParams.get('minPrice')
+    const maxPrice = searchParams.get('maxPrice')
+    const type = searchParams.get('type')
+    
+    if (minPrice && maxPrice) {
+      // Sauvegarder les prix dans les préférences utilisateur
+      savePreferences('criteria', {
+        min_price: parseInt(minPrice),
+        max_price: parseInt(maxPrice),
+        type: type || 'Any'
+      })
+    }
+  }, [searchParams, savePreferences])
 
   const steps = [
     {

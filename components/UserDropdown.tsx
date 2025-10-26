@@ -1,15 +1,17 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useSession, signOut } from 'next-auth/react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import Link from 'next/link'
 
 const UserDropdown: React.FC = () => {
-  const { user, logout } = useAuth()
+  const { data: session } = useSession()
   const { language } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const user = session?.user
 
   const translations = {
     de: {
@@ -45,7 +47,7 @@ const UserDropdown: React.FC = () => {
   if (!user) return null
 
   const handleLogout = () => {
-    logout()
+    signOut()
     setIsOpen(false)
   }
 

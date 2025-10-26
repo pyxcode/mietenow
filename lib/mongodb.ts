@@ -1,14 +1,25 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mietenow'
+const MONGODB_URI = process.env.MONGODB_URI
 
-// Forcer l'utilisation de la base mietenow-prod pour le cloud
+// Fonction pour obtenir l'URI MongoDB
 const getMongoUri = () => {
-  if (process.env.MONGODB_URI && process.env.MONGODB_URI.includes('mongodb+srv://')) {
-    // Convertir mongodb+srv:// vers mongodb:// direct pour éviter les problèmes DNS
-    const directUri = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-01.6srfa0f.mongodb.net:27017/mietenow-prod?authSource=admin&ssl=true'
-    return directUri
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not defined')
   }
+  
+  // Si c'est une URI mongodb+srv://, la convertir en mongodb:// direct pour éviter les problèmes DNS
+  if (MONGODB_URI.includes('mongodb+srv://')) {
+    // Extraire les composants de l'URI
+    const match = MONGODB_URI.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)(\?.*)?/)
+    if (match) {
+      const [, username, password, host, database, query] = match
+      // Convertir en URI direct (utilise le premier shard disponible)
+      const directUri = `mongodb://${username}:${password}@${host}:27017/${database}${query || ''}`
+      return directUri
+    }
+  }
+  
   return MONGODB_URI
 }
 

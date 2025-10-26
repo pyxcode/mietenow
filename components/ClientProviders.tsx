@@ -1,12 +1,16 @@
 'use client'
 
-import { AuthProvider } from '@/contexts/AuthContext'
+import { SessionProvider } from 'next-auth/react'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+import CrispChat from '@/components/CrispChat'
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <LanguageProvider>{children}</LanguageProvider>
-    </AuthProvider>
+    <SessionProvider>
+      <LanguageProvider>
+        {children}
+        <CrispChat />
+      </LanguageProvider>
+    </SessionProvider>
   )
 }

@@ -13,7 +13,11 @@
     "alerts": "node scripts/cron-send-alerts.js",
     "plans": "node scripts/cron-check-plans.js",
     "geocode": "node scripts/geocode-listings.js",
-    "change-password": "node scripts/change-password.js"
+    "change-password": "node scripts/change-password.js",
+    "upload-video": "node scripts/upload-video-to-cloudinary.js",
+    "test-crons": "node scripts/test-cron-jobs.js",
+    "deploy-render": "chmod +x scripts/deploy-render.sh && ./scripts/deploy-render.sh",
+    "deploy-render-complete": "chmod +x scripts/deploy-render-complete.sh && ./scripts/deploy-render-complete.sh"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",

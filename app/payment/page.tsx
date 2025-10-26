@@ -8,6 +8,7 @@ import Image from 'next/image'
 import SimpleHeader from '@/components/SimpleHeader'
 import Footer from '@/components/Footer'
 import PaymentForm from '@/components/PaymentForm'
+import VideoSection from '@/components/VideoSection'
 
 export const dynamic = 'force-dynamic'
 
@@ -393,6 +394,11 @@ export default function PaymentPage() {
           </div>
         </div>
       </div>
+
+      {/* Video Section - Après les plans */}
+      <VideoSection 
+        className="bg-gray-50"
+      />
 
       {/* FAQ Section - Fond bleu */}
       <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-16 relative">

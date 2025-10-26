@@ -49,7 +49,9 @@ export async function GET(req: NextRequest) {
         lastName: user.last_name,
         email: user.email,
         plan: user.plan,
-        subscriptionStatus: user.subscription_status,
+        subscription_status: user.subscription_status,
+        plan_expires_at: user.plan_expires_at,
+        isSubscribed: user.isSubscribed,
         searchPreferences: user.search_preferences
       }
     })

@@ -5,7 +5,7 @@ require('dotenv').config({ path: '.env.local' });
 // User model
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password_hash: { type: String, required: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   plan: { type: String, default: 'empty' },
@@ -29,9 +29,24 @@ const User = mongoose.model('User', userSchema);
 
 async function changePassword() {
   try {
-    // Connexion directe au shard PRIMARY (00-01)
-    const primaryUri = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-01.6srfa0f.mongodb.net:27017/mietenow-prod?authSource=admin&ssl=true';
-    await mongoose.connect(primaryUri);
+    // Utiliser la variable d'environnement MONGODB_URI
+    const mongoUri = process.env.MONGODB_URI;
+    
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI environment variable is not defined');
+    }
+    
+    // Si c'est une URI mongodb+srv://, la convertir en mongodb:// direct
+    let connectionUri = mongoUri;
+    if (mongoUri.includes('mongodb+srv://')) {
+      const match = mongoUri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)(\?.*)?/);
+      if (match) {
+        const [, username, password, host, database, query] = match;
+        connectionUri = `mongodb://${username}:${password}@${host}:27017/${database}${query || ''}`;
+      }
+    }
+    
+    await mongoose.connect(connectionUri);
     console.log('✅ Connecté à MongoDB - Base: mietenow-prod');
 
     // Lister tous les utilisateurs
@@ -75,7 +90,7 @@ async function changePassword() {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     
     // Mettre à jour le mot de passe
-    await User.updateOne({ email }, { password: hashedPassword });
+    await User.updateOne({ email }, { password_hash: hashedPassword });
     
     console.log(`✅ Mot de passe mis à jour pour ${user.email}`);
     console.log(`📧 Email: ${user.email}`);

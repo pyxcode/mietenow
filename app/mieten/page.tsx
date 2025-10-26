@@ -8,6 +8,7 @@ import { Search } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import VideoSection from '@/components/VideoSection'
 
 export default function MietenPage() {
   const { t, language } = useTranslation()
@@ -24,8 +25,13 @@ export default function MietenPage() {
   }
 
   const handleSearch = async () => {
-    // Rediriger directement vers criteria pour commencer l'onboarding
-    router.push('/criteria')
+    // Rediriger vers criteria avec les prix min/max en paramètres URL
+    const params = new URLSearchParams({
+      minPrice: formData.minPrice,
+      maxPrice: formData.maxPrice,
+      type: formData.type
+    })
+    router.push(`/criteria?${params.toString()}`)
   }
 
   const toggleFAQ = (index: number) => {
@@ -107,7 +113,7 @@ export default function MietenPage() {
           <div className="text-center z-10 max-w-4xl mx-auto px-6">
             {/* Title */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight">
-              {language === 'de' ? 'Finden Sie Ihre Wohnung' : 'Find Your Apartment'}
+              {language === 'de' ? 'Nicht mehr suchen, jetzt finden' : 'Find Your Apartment'}
             </h1>
             
             {/* Subtitle */}
@@ -203,6 +209,11 @@ export default function MietenPage() {
           <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
           <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-[#004AAD]/20 rounded-full blur-xl"></div>
         </section>
+
+        {/* Video Section - Après le Hero */}
+        <VideoSection 
+          className="bg-white"
+        />
 
         {/* FAQ Section */}
         <section className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-16">

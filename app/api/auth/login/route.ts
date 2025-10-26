@@ -26,8 +26,19 @@ export async function POST(req: NextRequest) {
     await connectDB()
 
     // Trouver l'utilisateur par email
+    console.log('🔍 Recherche utilisateur avec email:', email.toLowerCase())
     const user = await User.findOne({ email: email.toLowerCase() })
+    console.log('🔍 User found:', user ? 'YES' : 'NO')
+    if (user) {
+      console.log('🔍 User details:', {
+        id: user._id,
+        email: user.email,
+        plan: user.plan,
+        password_exists: !!user.password
+      })
+    }
     if (!user) {
+      console.log('❌ Utilisateur non trouvé pour:', email.toLowerCase())
       return NextResponse.json(
         { error: 'Email ou mot de passe incorrect' },
         { status: 401 }
@@ -35,7 +46,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Vérifier le mot de passe
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash)
+    const passwordField = user.password || user.password_hash
+    console.log('🔑 Password field exists:', !!passwordField)
+    if (!passwordField) {
+      return NextResponse.json(
+        { error: 'Email ou mot de passe incorrect' },
+        { status: 401 }
+      )
+    }
+    const isPasswordValid = await bcrypt.compare(password, passwordField)
+    console.log('✅ Password valid:', isPasswordValid)
     if (!isPasswordValid) {
       return NextResponse.json(
         { error: 'Email ou mot de passe incorrect' },
@@ -61,7 +81,9 @@ export async function POST(req: NextRequest) {
         lastName: user.last_name,
         email: user.email,
         plan: user.plan,
-        subscriptionStatus: user.subscription_status
+        subscription_status: user.subscription_status,
+        plan_expires_at: user.plan_expires_at,
+        isSubscribed: user.isSubscribed
       },
       token
     })

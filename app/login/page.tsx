@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useAuth } from '@/contexts/AuthContext'
+import { signIn, useSession } from 'next-auth/react'
 import { ChevronLeft, Mail, Lock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   const { language } = useLanguage()
-  const { login, user } = useAuth()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [formData, setFormData] = useState({
     email: '',
@@ -28,23 +28,31 @@ export default function LoginPage() {
 
   // Rediriger si déjà connecté
   useEffect(() => {
-    if (user) {
+    if (status === 'authenticated' && session?.user) {
       router.push('/search')
     }
-  }, [user, router])
+  }, [session, status, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    const result = await login(formData.email, formData.password)
-    
-    if (result.success) {
-      // Rediriger vers la page de recherche après connexion
-      router.push('/search')
-    } else {
-      setError(result.error || (language === 'de' ? 'Ein Fehler ist aufgetreten' : 'An error occurred'))
+    try {
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false
+      })
+      
+      if (result?.error) {
+        setError(language === 'de' ? 'Email oder Passwort falsch' : 'Email or password incorrect')
+      } else if (result?.ok) {
+        // Rediriger vers la page de recherche après connexion
+        router.push('/search')
+      }
+    } catch (error) {
+      setError(language === 'de' ? 'Ein Fehler ist aufgetreten' : 'An error occurred')
     }
     
     setLoading(false)

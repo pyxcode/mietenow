@@ -114,6 +114,15 @@ export default function PlanModal({ isOpen, onClose }: PlanModalProps) {
       setIsProcessing(true)
       setMessage('')
 
+      // Appeler elements.submit() AVANT stripe.confirmPayment()
+      const { error: submitError } = await elements.submit()
+      
+      if (submitError) {
+        setMessage(submitError.message || (language === 'de' ? 'Formularfehler.' : 'Form error.'))
+        setIsProcessing(false)
+        return
+      }
+
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         clientSecret,

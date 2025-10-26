@@ -128,7 +128,7 @@ export default function SolutionsPage() {
                   <div className="space-y-6 text-xl md:text-2xl text-gray-200 leading-relaxed">
                     <h2 className="text-xl md:text-2xl">
                       {language === 'de' 
-                        ? 'Hör auf zu suchen, fang an zu finden.'
+                        ? 'Nicht mehr suchen, jetzt finden.'
                         : 'Stop searching, start finding.'
                       }
                     </h2>

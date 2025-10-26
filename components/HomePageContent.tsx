@@ -10,23 +10,38 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useState } from 'react'
 import PlanModal from '@/components/PlanModal'
+import VideoSection from '@/components/VideoSection'
 
 export default function HomePage() {
   const { t, language } = useTranslation()
   const { user } = useAuth()
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [formData, setFormData] = useState({
+    minPrice: '500',
+    maxPrice: '1500',
+    type: 'Any'
+  })
 
   // S'assurer qu'on est côté client
   React.useEffect(() => {
     setIsClient(true)
   }, [])
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
   // Fonction pour gérer le clic sur le bouton de recherche
   const handleSearchClick = () => {
     if (!user) {
-      // Si pas connecté, aller vers criteria
-      window.location.href = '/criteria'
+      // Si pas connecté, aller vers criteria avec les prix
+      const params = new URLSearchParams({
+        minPrice: formData.minPrice,
+        maxPrice: formData.maxPrice,
+        type: formData.type
+      })
+      window.location.href = `/criteria?${params.toString()}`
       return
     }
 
@@ -74,7 +89,8 @@ export default function HomePage() {
                 <input
                   type="number"
                   placeholder="500"
-                  defaultValue="500"
+                  value={formData.minPrice}
+                  onChange={(e) => handleInputChange('minPrice', e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#004AAD] focus:border-transparent text-gray-900"
                 />
               </div>
@@ -87,7 +103,8 @@ export default function HomePage() {
                 <input
                   type="number"
                   placeholder="1500"
-                  defaultValue="1500"
+                  value={formData.maxPrice}
+                  onChange={(e) => handleInputChange('maxPrice', e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#004AAD] focus:border-transparent text-gray-900"
                 />
               </div>
@@ -121,6 +138,11 @@ export default function HomePage() {
         <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
         <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-[#004AAD]/20 rounded-full blur-xl"></div>
         </section>
+
+        {/* Video Section - Après le Hero */}
+        <VideoSection 
+          className="bg-white"
+        />
 
         {/* Features Section - Ultra Modern */}
         <section className="bg-gradient-to-b from-gray-50 to-white py-24">

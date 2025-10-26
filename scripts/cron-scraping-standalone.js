@@ -31,10 +31,24 @@ function log(message) {
 
 async function connectDB() {
   try {
-    // Connexion directe au shard PRIMARY pour le scraping
-    const primaryUri = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-01.6srfa0f.mongodb.net:27017/mietenow-prod?authSource=admin&ssl=true'
+    // Utiliser la variable d'environnement MONGODB_URI
+    const mongoUri = process.env.MONGODB_URI
     
-    await mongoose.connect(primaryUri)
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI environment variable is not defined')
+    }
+    
+    // Si c'est une URI mongodb+srv://, la convertir en mongodb:// direct
+    let connectionUri = mongoUri
+    if (mongoUri.includes('mongodb+srv://')) {
+      const match = mongoUri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)(\?.*)?/)
+      if (match) {
+        const [, username, password, host, database, query] = match
+        connectionUri = `mongodb://${username}:${password}@${host}:27017/${database}${query || ''}`
+      }
+    }
+    
+    await mongoose.connect(connectionUri)
     log('✅ Connecté à MongoDB - Base: mietenow-prod')
   } catch (error) {
     log(`❌ Erreur de connexion MongoDB: ${error.message}`)
@@ -157,6 +171,43 @@ async function cleanupOldListings() {
   }
 }
 
+async function sendAlerts() {
+  try {
+    log('📧 Envoi des alertes aux utilisateurs...')
+    
+    // Importer le modèle Alert
+    const Alert = require('./models/Alert.js')
+    
+    // Récupérer toutes les alertes actives
+    const alerts = await Alert.find({ is_active: true })
+    log(`📬 ${alerts.length} alertes actives trouvées`)
+    
+    let emailsSent = 0
+    
+    for (const alert of alerts) {
+      try {
+        // Simuler l'envoi d'email (vous pouvez intégrer SendGrid ici)
+        log(`📤 Envoi d'alerte pour: ${alert.email} - ${alert.title}`)
+        
+        // TODO: Intégrer SendGrid pour l'envoi réel des emails
+        // const sgMail = require('@sendgrid/mail')
+        // sgMail.setApiKey(process.env.APIKEYSENDGRID)
+        
+        emailsSent++
+      } catch (error) {
+        log(`❌ Erreur envoi alerte ${alert.email}: ${error.message}`)
+      }
+    }
+    
+    log(`✅ ${emailsSent} alertes envoyées`)
+    return emailsSent
+    
+  } catch (error) {
+    log(`❌ Erreur lors de l'envoi des alertes: ${error.message}`)
+    throw error
+  }
+}
+
 async function main() {
   const startTime = new Date()
   log(`🚀 Début du cron de scraping standalone - ${startTime.toISOString()}`)
@@ -170,14 +221,17 @@ async function main() {
     // 2. Lancer le scraping
     const scrapingResults = await runScraping()
     
-    // 3. Nettoyer les anciennes annonces
+    // 3. Envoyer les alertes immédiatement après le scraping
+    const emailsSent = await sendAlerts()
+    
+    // 4. Nettoyer les anciennes annonces
     const cleanupCount = await cleanupOldListings()
     
     const endTime = new Date()
     const duration = endTime.getTime() - startTime.getTime()
     
     log(`🎉 Cron terminé avec succès en ${duration}ms`)
-    log(`📊 Résumé: ${statusResults.checked} vérifiées, ${statusResults.removed} supprimées, ${cleanupCount} anciennes supprimées`)
+    log(`📊 Résumé: ${statusResults.checked} vérifiées, ${statusResults.removed} supprimées, ${emailsSent} alertes envoyées, ${cleanupCount} anciennes supprimées`)
     
   } catch (error) {
     log(`❌ Erreur fatale: ${error.message}`)

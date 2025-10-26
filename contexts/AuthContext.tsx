@@ -8,7 +8,9 @@ interface User {
   lastName: string
   email: string
   plan: string
-  subscriptionStatus: string
+  subscription_status: string
+  plan_expires_at?: string
+  isSubscribed: boolean
   searchPreferences?: {
     city: string
     max_price: number
@@ -88,20 +90,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       if (!token) {
+        console.log('🔍 Aucun token trouvé')
         setLoading(false)
         return
       }
 
+      console.log('🔍 Token trouvé, vérification...')
       const response = await fetch('/api/auth/verify', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
 
+      console.log('🔍 Réponse de vérification:', response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Utilisateur authentifié:', data.user.email)
         setUser(data.user)
       } else {
+        console.log('❌ Token invalide, nettoyage...')
         // Token invalide, le supprimer de localStorage ET cookies
         localStorage.removeItem('authToken')
         localStorage.removeItem('userId')
@@ -109,7 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         deleteCookie('userId')
       }
     } catch (error) {
-      console.error('Erreur lors de la vérification de l\'authentification:', error)
+      console.error('❌ Erreur lors de la vérification de l\'authentification:', error)
       localStorage.removeItem('authToken')
       localStorage.removeItem('userId')
       deleteCookie('authToken')
@@ -121,6 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('🔍 Tentative de connexion pour:', email)
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -132,14 +141,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json()
 
       if (response.ok) {
+        console.log('✅ Login réussi, sauvegarde du token...')
         // Sauvegarder dans localStorage ET cookies
         localStorage.setItem('authToken', data.token)
         localStorage.setItem('userId', data.user.id)
         setCookie('authToken', data.token, 30) // 30 jours
         setCookie('userId', data.user.id, 30)
         setUser(data.user)
+        console.log('✅ Token sauvegardé, utilisateur connecté:', data.user.email)
         return { success: true }
       } else {
+        console.log('❌ Login échoué:', data.error)
         return { success: false, error: data.error }
       }
     } catch (error) {

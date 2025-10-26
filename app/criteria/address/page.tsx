@@ -92,6 +92,10 @@ export default function AddressCriteriaPage() {
 
   const handleContinue = async () => {
     try {
+      console.log('🔍 Debug - Adresse saisie:', address)
+      console.log('🔍 Debug - Adresse trim:', address.trim())
+      console.log('🔍 Debug - Coordonnées sélectionnées:', selectedCoordinates)
+      
       let coordinates = selectedCoordinates
       
       // Si pas de coordonnées sélectionnées mais une adresse saisie, géocoder automatiquement
@@ -116,11 +120,19 @@ export default function AddressCriteriaPage() {
       }
       
       // Sauvegarder les préférences avec les coordonnées
-      await savePreferences('address', {
+      console.log('💾 Sauvegarde des préférences:', {
         address,
         radius,
         coordinates: coordinates || undefined
       })
+      
+      const saveResult = await savePreferences('address', {
+        address,
+        radius,
+        coordinates: coordinates || undefined
+      })
+      
+      console.log('✅ Résultat de la sauvegarde:', saveResult)
       
       // Rediriger vers la page de signup
       router.push('/signup')
