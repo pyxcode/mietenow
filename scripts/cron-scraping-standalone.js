@@ -6,7 +6,7 @@
  */
 
 // Logs de démarrage détaillés
-console.log('🚀 Démarrage du script cron-scraping-standalone.js v2.0')
+console.log('🚀 Démarrage du script cron-scraping-standalone.js v2.1 - FIXED MODEL PATHS')
 console.log('📁 Répertoire de travail:', process.cwd())
 console.log('🔧 Node version:', process.version)
 console.log('🌍 Environnement:', process.env.NODE_ENV || 'development')
@@ -91,6 +91,7 @@ async function checkListingStatuses() {
     log('🔍 Vérification du statut des annonces...')
     
     // Importer le modèle Listing
+    log('📦 Chargement du modèle Listing depuis ./models/Listing.js')
     const Listing = require('./models/Listing.js')
     
     // Récupérer toutes les annonces actives
@@ -206,6 +207,7 @@ async function sendAlerts() {
     log('📧 Envoi des alertes aux utilisateurs...')
     
     // Importer le modèle Alert
+    log('📦 Chargement du modèle Alert depuis ./models/Alert.js')
     const Alert = require('./models/Alert.js')
     
     // Récupérer toutes les alertes actives
