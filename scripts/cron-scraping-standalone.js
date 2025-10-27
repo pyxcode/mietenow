@@ -6,7 +6,7 @@
  */
 
 // Logs de démarrage détaillés
-console.log('🚀 Démarrage du script cron-scraping-standalone.js')
+console.log('🚀 Démarrage du script cron-scraping-standalone.js v2.0')
 console.log('📁 Répertoire de travail:', process.cwd())
 console.log('🔧 Node version:', process.version)
 console.log('🌍 Environnement:', process.env.NODE_ENV || 'development')
