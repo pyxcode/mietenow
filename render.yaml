@@ -28,7 +28,7 @@ services:
     plan: starter
     schedule: "*/5 * * * *"  # Toutes les 5 minutes
     buildCommand: npm install
-    startCommand: node scripts/cron-scraping-no-puppeteer.js
+    startCommand: node scripts/cron-scraping-browserless.js
     envVars:
       - key: MONGODB_URI
         sync: false
@@ -43,6 +43,8 @@ services:
       - key: BRIGHT_DATA_PASSWORD
         sync: false
       - key: BRIGHT_DATA_ENDPOINT
+        sync: false
+      - key: BROWSERLESS_TOKEN
         sync: false
 
   # 🧹 Cron Job - Nettoyage des anciennes annonces
