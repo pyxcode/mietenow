@@ -4,7 +4,7 @@
 require('dotenv').config({ path: '.env.local' })
 
 const mongoose = require('mongoose')
-const nodemailer = require('nodemailer')
+const sgMail = require('@sendgrid/mail')
 
 // Configuration MongoDB
 const MONGODB_URI = process.env.MONGODB_URI2 ? process.env.MONGODB_URI2.replace('/?', '/mietenow-prod?') : process.env.MONGODB_URI || 'mongodb://localhost:27017/mietenow'
@@ -12,15 +12,12 @@ const MONGODB_URI = process.env.MONGODB_URI2 ? process.env.MONGODB_URI2.replace(
 console.log('🔍 Debug - MONGODB_URI:', MONGODB_URI)
 console.log('🔍 Debug - MONGODB_URI2:', process.env.MONGODB_URI2)
 
-// Configuration email
-const EMAIL_CONFIG = {
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
+// Configuration SendGrid
+if (process.env.APIKEYSENDGRID) {
+  sgMail.setApiKey(process.env.APIKEYSENDGRID)
+  console.log('✅ SendGrid API key configured')
+} else {
+  console.log('⚠️ No SendGrid API key found')
 }
 
 // Modèles MongoDB
@@ -109,16 +106,12 @@ async function sendAlertEmails() {
     })
     
     // Configuration du transporteur email
-    const transporter = nodemailer.createTransport(EMAIL_CONFIG)
-    
-    // Vérifier la connexion email
-    try {
-      await transporter.verify()
-      console.log('✅ Email transporter verified')
-    } catch (error) {
-      console.error('❌ Email transporter error:', error)
+    if (!process.env.APIKEYSENDGRID) {
+      console.log('❌ No SendGrid API key configured, skipping email sending')
       return
     }
+    
+    console.log('✅ SendGrid configured, proceeding with email sending')
     
     let emailsSent = 0
     
@@ -186,15 +179,15 @@ async function sendAlertEmails() {
         // Construire le contenu de l'email
         const emailContent = buildEmailContent(alert, newListings)
         
-        // Envoyer l'email
-        const mailOptions = {
-          from: EMAIL_CONFIG.auth.user,
+        // Envoyer l'email avec SendGrid
+        const msg = {
           to: alert.email,
+          from: 'noreply@mietenow.com', // Email vérifié sur SendGrid
           subject: `🏠 ${newListings.length} nouvelles annonces trouvées - ${alert.title}`,
           html: emailContent
         }
         
-        await transporter.sendMail(mailOptions)
+        await sgMail.send(msg)
         console.log(`✅ Email sent to ${alert.email}`)
         
         // Mettre à jour la date de dernière vérification
