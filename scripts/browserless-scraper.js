@@ -9,7 +9,7 @@ const mongoose = require('mongoose')
 class BrowserlessScraper {
   constructor() {
     this.browserlessUrl = 'https://production-sfo.browserless.io'
-    this.token = process.env.BROWSERLESS_TOKEN || 'your-token-here'
+    this.token = process.env.BROWSERLESS_TOKEN
     this.baseUrl = 'https://www.immobilienscout24.de'
     this.searchUrl = 'https://www.immobilienscout24.de/Suche/S-T/Wohnung-Miete/Berlin/Berlin'
   }
@@ -17,6 +17,7 @@ class BrowserlessScraper {
   async scrapeWithBrowserless() {
     try {
       console.log('🔍 Scraping avec Browserless.io...')
+      console.log('📡 URL:', this.searchUrl)
       
       const response = await fetch(`${this.browserlessUrl}/content?token=${this.token}`, {
         method: 'POST',
@@ -25,13 +26,7 @@ class BrowserlessScraper {
         },
         body: JSON.stringify({
           url: this.searchUrl,
-          waitFor: 3000,
-          waitUntil: 'networkidle0',
-          viewport: {
-            width: 1920,
-            height: 1080
-          },
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          waitFor: 3000
         })
       })
 
@@ -238,6 +233,29 @@ class BrowserlessScraper {
       return 0
     }
   }
+}
+
+// Point d'entrée pour test local
+if (require.main === module) {
+  console.log('🚀 Test BrowserlessScraper en local...')
+  
+  const scraper = new BrowserlessScraper()
+  
+  scraper.scrapeWithBrowserless()
+    .then(listings => {
+      console.log('✅ Scraping terminé!')
+      console.log('📊 Annonces trouvées:', listings.length)
+      
+      listings.slice(0, 3).forEach((listing, index) => {
+        console.log(`\n${index + 1}. ${listing.title}`)
+        console.log(`   💰 ${listing.price}`)
+        console.log(`   📏 ${listing.size}`)
+        console.log(`   📍 ${listing.address}`)
+      })
+    })
+    .catch(error => {
+      console.log('❌ Erreur:', error.message)
+    })
 }
 
 module.exports = { BrowserlessScraper }
