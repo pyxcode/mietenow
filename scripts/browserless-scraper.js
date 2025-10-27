@@ -11,7 +11,7 @@ class BrowserlessScraper {
     this.browserlessUrl = 'https://production-sfo.browserless.io'
     this.token = process.env.BROWSERLESS_TOKEN
     this.baseUrl = 'https://www.immobilienscout24.de'
-    this.searchUrl = 'https://www.immobilienscout24.de/Suche/S-T/Wohnung-Miete/Berlin/Berlin'
+    this.searchUrl = 'https://www.immobilienscout24.de/Suche/de/berlin/berlin/wohnung-mieten'
   }
 
   async scrapeWithBrowserless() {
@@ -25,8 +25,7 @@ class BrowserlessScraper {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: this.searchUrl,
-          waitFor: 3000
+          url: this.searchUrl
         })
       })
 
