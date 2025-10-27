@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 
 export async function GET(
   request: NextRequest,
@@ -25,9 +25,15 @@ export async function GET(
     // Rechercher l'annonce par ID (essayer d'abord avec id, puis avec _id)
     let listing = await collection.findOne({ id: id })
     
-    // Si pas trouvé avec id, essayer avec _id
+    // Si pas trouvé avec id, essayer avec _id (en convertissant en ObjectId)
     if (!listing) {
-      listing = await collection.findOne({ _id: id })
+      try {
+        const objectId = new ObjectId(id)
+        listing = await collection.findOne({ _id: objectId })
+      } catch (error) {
+        // Si l'id n'est pas un ObjectId valide, continuer sans erreur
+        console.log('Invalid ObjectId format:', id)
+      }
     }
     
     await client.close()

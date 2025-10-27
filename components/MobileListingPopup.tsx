@@ -15,7 +15,7 @@ const MobileListingPopup: React.FC<MobileListingPopupProps> = ({
   if (!listing || !isOpen) return null
 
   const handleApply = () => {
-    const link = listing.link || listing.url
+    const link = listing.url
     if (link) {
       window.open(link, '_blank')
     } else {
@@ -79,11 +79,6 @@ const MobileListingPopup: React.FC<MobileListingPopupProps> = ({
                 {listing.size} m²
               </span>
             )}
-            {listing.type && (
-              <span className="px-2 py-1 bg-gray-100 rounded-full text-sm">
-                {listing.type}
-              </span>
-            )}
           </div>
 
           {/* Location */}
@@ -102,13 +97,13 @@ const MobileListingPopup: React.FC<MobileListingPopupProps> = ({
             <button
               onClick={handleApply}
               className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors ${
-                listing.link || listing.url
+                listing.url
                   ? 'bg-[#00BFA6] hover:bg-[#00A693]'
                   : 'bg-gray-400 cursor-not-allowed'
               }`}
-              disabled={!listing.link && !listing.url}
+              disabled={!listing.url}
             >
-              {listing.link || listing.url ? 'Jetzt bewerben' : 'Kein Link verfügbar'}
+              {listing.url ? 'Jetzt bewerben' : 'Kein Link verfügbar'}
             </button>
           </div>
         </div>
