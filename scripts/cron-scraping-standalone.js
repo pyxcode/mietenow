@@ -89,7 +89,7 @@ async function checkListingStatuses() {
     log('🔍 Vérification du statut des annonces...')
     
     // Importer le modèle Listing
-    const Listing = require('./models/Listing.js')
+    const Listing = require('../models/Listing.js')
     
     // Récupérer toutes les annonces actives
     const listings = await Listing.find({ 
@@ -180,7 +180,7 @@ async function cleanupOldListings() {
   try {
     log('🧹 Nettoyage des anciennes annonces...')
     
-    const Listing = require('./models/Listing.js')
+    const Listing = require('../models/Listing.js')
     
     // Supprimer les annonces plus anciennes que 30 jours
     const thirtyDaysAgo = new Date()
@@ -204,7 +204,7 @@ async function sendAlerts() {
     log('📧 Envoi des alertes aux utilisateurs...')
     
     // Importer le modèle Alert
-    const Alert = require('./models/Alert.js')
+    const Alert = require('../models/Alert.js')
     
     // Récupérer toutes les alertes actives
     const alerts = await Alert.find({ is_active: true })
