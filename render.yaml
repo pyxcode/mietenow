@@ -103,6 +103,21 @@ services:
     startCommand: node scripts/cron-hourly-simple.js
     envVars: []
 
+  - type: cron
+    name: mietenow-scraper
+    env: node
+    region: frankfurt
+    plan: starter
+    schedule: "*/5 * * * *"  # Toutes les 5 minutes
+    buildCommand: npm install
+    startCommand: node scripts/cron-scraping-standalone.js
+    envVars:
+      - key: BROWSERLESS_TOKEN
+        fromService:
+          type: web
+          name: mietenow-web
+          property: envVar.BROWSERLESS_TOKEN
+
 # 🔧 Variables d'environnement partagées
 # Ces variables doivent être configurées dans le dashboard Render
 envVars:
@@ -132,4 +147,6 @@ envVars:
     description: "Mot de passe Bright Data"
   - key: BRIGHT_DATA_ENDPOINT
     description: "Endpoint Bright Data"
+  - key: BROWSERLESS_TOKEN
+    description: "Token Browserless.io pour le scraping"
 
