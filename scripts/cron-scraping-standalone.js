@@ -31,9 +31,11 @@ console.log('  - MONGODB_URI:', process.env.MONGODB_URI ? '✅ Définie' : '❌ 
 console.log('  - APIKEYSENDGRID:', process.env.APIKEYSENDGRID ? '✅ Définie' : '❌ Manquante')
 
 // Importer les scrapers directement
+let ScraperManager
 try {
   console.log('📦 Tentative de chargement des scrapers...')
-  const { ScraperManager } = require('../lib/scrapers/core/scraper-manager.js')
+  const scraperModule = require('../lib/scrapers/core/scraper-manager.js')
+  ScraperManager = scraperModule.ScraperManager
   console.log('✅ ScraperManager chargé avec succès')
 } catch (error) {
   console.log('❌ Erreur chargement ScraperManager:', error.message)
