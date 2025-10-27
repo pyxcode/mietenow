@@ -209,7 +209,7 @@ async function sendAlerts() {
     const Alert = require('./models/Alert.js')
     
     // Récupérer toutes les alertes actives
-    const alerts = await Alert.find({ is_active: true })
+    const alerts = await Alert.find({ active: true })
     log(`📬 ${alerts.length} alertes actives trouvées`)
     
     let emailsSent = 0
