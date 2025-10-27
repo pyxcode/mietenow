@@ -20,7 +20,7 @@ services:
           name: mietenow-web
           property: host
 
-  # 🔄 Cron Job - Scraping toutes les 5 minutes (Version Simple)
+  # 🔄 Cron Job - Scraping toutes les 5 minutes
   - type: cron
     name: mietenow-scraper
     env: node
@@ -28,23 +28,32 @@ services:
     plan: starter
     schedule: "*/5 * * * *"  # Toutes les 5 minutes
     buildCommand: npm install
-    startCommand: node scripts/cron-scraping-hybrid.js
+    startCommand: node scripts/cron-scraping-standalone.js
     envVars:
       - key: MONGODB_URI
         sync: false
-      - key: APIKEYSENDGRID
-        sync: false
-      - key: SENDGRID_FROM_EMAIL
-        sync: false
-      - key: CLOUDINARY_URL
-        sync: false
-      - key: BRIGHT_DATA_USERNAME
-        sync: false
-      - key: BRIGHT_DATA_PASSWORD
-        sync: false
-      - key: BRIGHT_DATA_ENDPOINT
-        sync: false
       - key: BROWSERLESS_TOKEN
+        sync: false
+
+  # 📧 Cron Job - Envoi des alertes
+  - type: cron
+    name: mietenow-alerts
+    env: node
+    region: frankfurt
+    plan: starter
+    schedule: "5 * * * *"  # Toutes les heures + 5 minutes
+    buildCommand: npm install
+    startCommand: node scripts/cron-send-alerts.js
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
         sync: false
 
   # 🧹 Cron Job - Nettoyage des anciennes annonces
@@ -102,21 +111,6 @@ services:
     buildCommand: npm install
     startCommand: node scripts/cron-hourly-simple.js
     envVars: []
-
-  - type: cron
-    name: mietenow-scraper
-    env: node
-    region: frankfurt
-    plan: starter
-    schedule: "*/5 * * * *"  # Toutes les 5 minutes
-    buildCommand: npm install
-    startCommand: node scripts/cron-scraping-standalone.js
-    envVars:
-      - key: BROWSERLESS_TOKEN
-        fromService:
-          type: web
-          name: mietenow-web
-          property: envVar.BROWSERLESS_TOKEN
 
 # 🔧 Variables d'environnement partagées
 # Ces variables doivent être configurées dans le dashboard Render
