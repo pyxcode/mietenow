@@ -15,6 +15,7 @@ interface Listing {
   type: string
   images: string[]
   link?: string
+  url?: string
   platform?: string
   scrapedAt?: string
   lat: number
@@ -48,8 +49,17 @@ export default function ListingDetailView({ listing, onBack }: ListingDetailView
   }
 
   const handleApply = () => {
+    console.log('View Details clicked, listing.link:', listing.link)
     if (listing.link && listing.link !== '#') {
       window.open(listing.link, '_blank')
+    } else {
+      console.log('No valid link found for listing:', listing.id)
+      // Fallback: essayer d'ouvrir l'URL originale
+      if (listing.url) {
+        window.open(listing.url, '_blank')
+      } else {
+        alert(language === 'de' ? 'Kein Link verfügbar' : 'No link available')
+      }
     }
   }
 
@@ -219,15 +229,24 @@ export default function ListingDetailView({ listing, onBack }: ListingDetailView
           <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-100">
             <button
               onClick={handleApply}
-              className="w-full bg-mineral text-white py-3 px-6 rounded-lg font-semibold hover:bg-mineral/90 transition-colors"
+              disabled={!listing.link || listing.link === '#'}
+              className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+                listing.link && listing.link !== '#'
+                  ? 'bg-mineral text-white hover:bg-mineral/90'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
               {language === 'de' ? 'Jetzt bewerben' : 'Apply Now'}
             </button>
             
             <p className="text-xs text-gray-500 text-center mt-2">
-              {language === 'de' 
-                ? 'Sie werden zur Originalanzeige weitergeleitet' 
-                : 'You will be redirected to the original listing'
+              {listing.link && listing.link !== '#'
+                ? (language === 'de' 
+                    ? 'Sie werden zur Originalanzeige weitergeleitet' 
+                    : 'You will be redirected to the original listing')
+                : (language === 'de'
+                    ? 'Kein Link verfügbar'
+                    : 'No link available')
               }
             </p>
           </div>

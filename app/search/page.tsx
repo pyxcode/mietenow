@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { Search, MapPin, Euro, Home, Filter, Loader2, Bell, Info } from 'lucide-react'
+import { Search, MapPin, Euro, Home, Filter, Loader2, Bell, Info, Map } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import UserDropdown from '@/components/UserDropdown'
@@ -90,6 +90,9 @@ export default function SearchPage() {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
   const [showListingDetail, setShowListingDetail] = useState(false)
   const [clickedListing, setClickedListing] = useState<Listing | null>(null)
+  const [showMobileMap, setShowMobileMap] = useState(false)
+  const [cameFromMap, setCameFromMap] = useState(false)
+  const [cameFromMobileMap, setCameFromMobileMap] = useState(false)
 
   const [bounds, setBounds] = useState<LatLngBounds | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -168,7 +171,50 @@ export default function SearchPage() {
     }
   }, [user, authLoading, planLoading, isPlanValid])
 
-  // Charger les vraies données au montage du composant
+  // Fonction pour gérer le clic sur une annonce
+  const handleListingClick = useCallback((listing: Listing, fromMap: boolean = false, fromMobileMap: boolean = false) => {
+    console.log('🎯 handleListingClick called with:', {
+      title: listing.title,
+      id: listing.id,
+      fromMap,
+      fromMobileMap
+    })
+    
+    console.log('📊 Current state before update:', {
+      showListingDetail,
+      selectedListing: selectedListing?.title || 'null'
+    })
+    
+    setSelectedListing(listing)
+    setClickedListing(listing) // Pour déclencher le zoom
+    setShowListingDetail(true)
+    setCameFromMap(fromMap)
+    setCameFromMobileMap(fromMobileMap)
+    
+    console.log('✅ State update calls made')
+    
+    // Vérifier l'état après un court délai
+    setTimeout(() => {
+      console.log('📊 State after update (delayed check):', {
+        showListingDetail,
+        selectedListing: selectedListing?.title || 'null'
+      })
+    }, 100)
+  }, [])
+
+
+  // Debug pour voir l'état de showListingDetail
+  useEffect(() => {
+    console.log('🔍 showListingDetail state changed:', showListingDetail)
+    if (showListingDetail && selectedListing) {
+      console.log('📋 Selected listing:', selectedListing.title)
+    }
+    
+    // Debug supplémentaire pour voir pourquoi l'état ne change pas
+    if (!showListingDetail && selectedListing) {
+      console.log('⚠️ WARNING: selectedListing exists but showListingDetail is false!')
+    }
+  }, [showListingDetail, selectedListing])
   useEffect(() => {
     const fetchListingsAndPreferences = async () => {
       try {
@@ -386,13 +432,6 @@ export default function SearchPage() {
     }
   }
 
-  // Fonction pour gérer le clic sur une annonce
-  const handleListingClick = (listing: Listing) => {
-    setSelectedListing(listing)
-    setClickedListing(listing) // Pour déclencher le zoom
-    setShowListingDetail(true)
-  }
-
   // Fonction pour gérer le survol (sans aucun effet sur la carte)
   const handleListingHover = (listing: Listing) => {
     setActiveId(listing.id)
@@ -404,6 +443,30 @@ export default function SearchPage() {
     setShowListingDetail(false)
     setSelectedListing(null)
     setClickedListing(null)
+    
+    // Si on venait de la carte mobile, y retourner
+    if (cameFromMobileMap) {
+      setShowMobileMap(true)
+    } else if (cameFromMap) {
+      // Si on venait de la carte desktop, rester sur la vue normale (carte + liste)
+      setShowMobileMap(false)
+    } else {
+      // Si on venait de la liste, rester sur la liste
+      setShowMobileMap(false)
+    }
+    
+    setCameFromMap(false)
+    setCameFromMobileMap(false)
+  }
+
+  // Fonction pour revenir à la liste depuis la carte
+  const handleBackToListFromMap = () => {
+    setShowMobileMap(false)
+    setShowListingDetail(false)
+    setSelectedListing(null)
+    setClickedListing(null)
+    setCameFromMap(false)
+    setCameFromMobileMap(false)
   }
 
   const filtered = useMemo(() => {
@@ -483,6 +546,31 @@ export default function SearchPage() {
     console.log(`Résultat du filtrage: ${filteredListings.length} annonces sur ${sourceListings.length}`)
     return filteredListings
   }, [allListings, visibleListings, isFilteredByMap, searchCriteria, addressCoordinates])
+
+  // Exposer la fonction selectListing globalement pour les boutons externes
+  useEffect(() => {
+    const selectListing = (listingId: string) => {
+      console.log('External selectListing called with ID:', listingId)
+      const listing = allListings.find(l => l.id === listingId)
+      if (listing) {
+        handleListingClick(listing, false, false)
+      } else {
+        console.error('Listing not found with ID:', listingId)
+      }
+    }
+
+    // Exposer seulement la fonction selectListing
+    if (typeof window !== 'undefined') {
+      (window as any).selectListing = selectListing
+    }
+
+    // Cleanup function
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).selectListing
+      }
+    }
+  }, [allListings, handleListingClick])
 
   const listingCountLabel = useMemo(() => {
     const n = filtered.length
@@ -808,11 +896,59 @@ export default function SearchPage() {
       </header>
       
       <main className="px-4 md:px-6 lg:px-8 max-w-none pt-4 h-[calc(100vh-100px)] overflow-hidden">
-        {/* Compteur d'annonces seulement */}
-        <div className="mb-4">
+        {/* Compteur d'annonces et bouton carte mobile */}
+        <div className="mb-4 flex justify-between items-center">
           <div className="text-sm text-gray-600">{listingCountLabel}</div>
+          
+          {/* Bouton carte mobile - visible seulement sur mobile */}
+          <button
+            onClick={() => setShowMobileMap(!showMobileMap)}
+            className={`lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              showMobileMap 
+                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                : 'bg-mineral text-white hover:bg-mineral/90'
+            }`}
+          >
+            <Map className="w-4 h-4" />
+            <span>{language === 'de' ? (showMobileMap ? 'Liste' : 'Karte') : (showMobileMap ? 'List' : 'Map')}</span>
+          </button>
         </div>
 
+
+        {/* Carte mobile en plein écran */}
+        {showMobileMap && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-white">
+            <div className="h-full flex flex-col">
+              {/* Header de la carte mobile */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold">{language === 'de' ? 'Karte' : 'Map'}</h2>
+                <button
+                  onClick={() => setShowMobileMap(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {/* Carte mobile */}
+              <div className="flex-1">
+                <MapComponent 
+                  listings={filtered}
+                  selectedListing={filtered.find(l => l.id === activeId) || null}
+                  clickedListing={clickedListing}
+                  onListingSelect={(listing) => setActiveId(listing.id)}
+                  onBoundsChange={(newBounds) => setBounds(newBounds)}
+                  onRefreshVisibleListings={handleRefreshVisibleListings}
+                  onListingClick={(listing) => {
+                    console.log('MapComponent onListingClick called with:', listing.title)
+                    handleListingClick(listing, true, false) // fromMap = true, fromMobileMap = false
+                  }}
+                  onBackToList={handleBackToListFromMap}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Split layout: 2/3 listings, 1/3 map */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100%-56px)] w-full">
@@ -832,7 +968,7 @@ export default function SearchPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {filtered.map((listing) => (
-                    <div key={listing.id} onMouseEnter={()=>handleListingHover(listing)} onMouseLeave={()=>setActiveId(prev=>prev===listing.id?null:prev)} className={`card hover:shadow-xl transition-all duration-300 cursor-pointer ${activeId===listing.id?'ring-2 ring-mineral':''}`} onClick={() => handleListingClick(listing)}>
+                    <div key={listing.id} data-listing-id={listing.id} onMouseEnter={()=>handleListingHover(listing)} onMouseLeave={()=>setActiveId(prev=>prev===listing.id?null:prev)} className={`card hover:shadow-xl transition-all duration-300 cursor-pointer ${activeId===listing.id?'ring-2 ring-mineral':''}`} onClick={() => handleListingClick(listing, false, false)}>
                       <div className="h-48 bg-gray-200 rounded-lg mb-4 overflow-hidden">
                         {listing.images && listing.images.length > 0 ? (
                           <img 
@@ -895,7 +1031,11 @@ export default function SearchPage() {
                   onListingSelect={(listing) => setActiveId(listing.id)}
                   onBoundsChange={(newBounds) => setBounds(newBounds)}
                   onRefreshVisibleListings={handleRefreshVisibleListings}
-                  onListingClick={handleListingClick}
+                  onListingClick={(listing) => {
+                    console.log('Desktop MapComponent onListingClick called with:', listing.title)
+                    handleListingClick(listing, true, false)
+                  }}
+                  onBackToList={handleBackToListFromMap}
                 />
               </div>
         </div>

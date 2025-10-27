@@ -14,10 +14,18 @@ class BrowserlessScraper {
     this.searchUrl = 'https://www.immobilienscout24.de/Suche/de/berlin/berlin/wohnung-mieten'
   }
 
+  // Fonction pour ajouter un délai entre les requêtes
+  async delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
   async scrapeWithBrowserless() {
     try {
       console.log('🔍 Scraping avec Browserless.io...')
       console.log('📡 URL:', this.searchUrl)
+      
+      // Ajouter un délai avant la requête
+      await this.delay(2000) // 2 secondes
       
       const response = await fetch(`${this.browserlessUrl}/content?token=${this.token}`, {
         method: 'POST',
@@ -103,6 +111,9 @@ class BrowserlessScraper {
       console.log('🔍 Scraping WG-Gesucht avec Browserless...')
       
       const wgUrl = 'https://www.wg-gesucht.de/wohnungen-in-Berlin.8.0.1.0.html'
+      
+      // Ajouter un délai avant la requête
+      await this.delay(3000) // 3 secondes
       
       const response = await fetch(`${this.browserlessUrl}/content?token=${this.token}`, {
         method: 'POST',

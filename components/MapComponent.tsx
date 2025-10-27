@@ -67,6 +67,7 @@ interface MapComponentProps {
   onBoundsChange: (bounds: LatLngBounds) => void
   onRefreshVisibleListings?: (visibleListings: Listing[]) => void
   onListingClick?: (listing: Listing) => void
+  onBackToList?: () => void
 }
 
 // Composant pour zoomer sur une annonce spécifique (SEULEMENT au clic)
@@ -124,6 +125,21 @@ function StableMarkersLayer({
   useEffect(() => {
     if (!map) return
 
+    // Ajouter des styles CSS pour les marqueurs cliquables
+    const style = document.createElement('style')
+    style.setAttribute('data-custom-markers', 'true')
+    style.textContent = `
+      .custom-price-marker {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+      }
+      .custom-price-marker:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+      }
+    `
+    document.head.appendChild(style)
+
     // Créer un groupe de couches stable (une seule fois)
     if (!layerRef.current) {
       layerRef.current = L.layerGroup().addTo(map)
@@ -150,7 +166,8 @@ function StableMarkersLayer({
             text-align: center;
             white-space: nowrap;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: all 0.2s ease;
+            cursor: pointer;
+            pointer-events: auto;
           ">
             ${priceText}
           </div>
@@ -178,27 +195,22 @@ function StableMarkersLayer({
             icon: createCustomIcon(listing.price, isSelected)
           })
           
-          // Popup avec contenu détaillé
-          const popupContent = `
-            <div style="padding: 8px; min-width: 200px;">
-              <h3 style="font-weight: 600; font-size: 14px; margin: 0 0 4px 0;">${listing.title}</h3>
-              <p style="font-size: 12px; color: #666; margin: 0 0 8px 0;">${listing.location}</p>
-              <p style="font-weight: bold; font-size: 14px; margin: 0 0 8px 0; color: #2563eb;">
-                ${typeof listing.price === 'number' ? `${listing.price} €` : listing.price}
-              </p>
-              <button onclick="if (typeof window !== 'undefined' && window.selectListing) window.selectListing('${listing.id}')" 
-                      style="width: 100%; background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
-                View Details
-              </button>
-            </div>
-          `
-          
-          marker.bindPopup(popupContent)
-          
-          // Gestion des clics
-          marker.on('click', () => {
-            onListingSelect(listing)
+          // Gestion des clics - ouvrir directement la page de détail
+          marker.on('click', (e) => {
+            console.log('🎯 PIN CLICKED!', {
+              listingId: listing.id,
+              title: listing.title,
+              price: listing.price,
+              coordinates: [listing.lat, listing.lng]
+            })
+            console.log('Event details:', e)
+            
+            if (onListingSelect) {
+              console.log('Calling onListingSelect...')
+              onListingSelect(listing)
+            }
             if (onListingClick) {
+              console.log('Calling onListingClick...')
               onListingClick(listing)
             }
           })
@@ -274,7 +286,8 @@ function StableMarkersLayer({
             text-align: center;
             white-space: nowrap;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: all 0.2s ease;
+            cursor: pointer;
+            pointer-events: auto;
           ">
             ${priceText}
           </div>
@@ -302,24 +315,22 @@ function StableMarkersLayer({
             icon: createCustomIcon(listing.price, isSelected)
           })
           
-          const popupContent = `
-            <div style="padding: 8px; min-width: 200px;">
-              <h3 style="font-weight: 600; font-size: 14px; margin: 0 0 4px 0;">${listing.title}</h3>
-              <p style="font-size: 12px; color: #666; margin: 0 0 8px 0;">${listing.location}</p>
-              <p style="font-weight: bold; font-size: 14px; margin: 0 0 8px 0; color: #2563eb;">
-                ${typeof listing.price === 'number' ? `${listing.price} €` : listing.price}
-              </p>
-              <button onclick="if (typeof window !== 'undefined' && window.selectListing) window.selectListing('${listing.id}')" 
-                      style="width: 100%; background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
-                View Details
-              </button>
-            </div>
-          `
-          
-          marker.bindPopup(popupContent)
-          marker.on('click', () => {
-            onListingSelect(listing)
+          // Gestion des clics - ouvrir directement la page de détail
+          marker.on('click', (e) => {
+            console.log('🎯 PIN CLICKED!', {
+              listingId: listing.id,
+              title: listing.title,
+              price: listing.price,
+              coordinates: [listing.lat, listing.lng]
+            })
+            console.log('Event details:', e)
+            
+            if (onListingSelect) {
+              console.log('Calling onListingSelect...')
+              onListingSelect(listing)
+            }
             if (onListingClick) {
+              console.log('Calling onListingClick...')
               onListingClick(listing)
             }
           })
@@ -339,10 +350,12 @@ function StableMarkersLayer({
 // Composant pour les contrôles de la carte (simplifié)
 function MapControls({ 
   listings,
-  onRefreshVisibleListings 
+  onRefreshVisibleListings,
+  onBackToList
 }: { 
   listings: Listing[]
-  onRefreshVisibleListings?: (visibleListings: Listing[]) => void 
+  onRefreshVisibleListings?: (visibleListings: Listing[]) => void
+  onBackToList?: () => void
 }) {
   const map = useMap()
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -381,7 +394,19 @@ function MapControls({
   }
 
   return (
-    <div className="absolute top-4 right-4 z-[1000]">
+    <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+      {/* Bouton retour à la liste */}
+      {onBackToList && (
+        <button
+          onClick={onBackToList}
+          className="bg-white hover:bg-gray-50 border border-gray-300 rounded-lg p-3 shadow-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium text-gray-700"
+          title="Back to list"
+        >
+          <MapPin className="w-4 h-4" />
+          <span className="hidden sm:inline">Back to List</span>
+        </button>
+      )}
+      
       {/* Bouton d'actualisation */}
       <button
         onClick={handleRefresh}
@@ -405,7 +430,8 @@ function MapComponent({
   onListingSelect, 
   onBoundsChange, 
   onRefreshVisibleListings,
-  onListingClick
+  onListingClick,
+  onBackToList
 }: MapComponentProps) {
   // Stabiliser la prop listings pour éviter les re-renders inutiles
   const stableListings = useMemo(() => listings, [listings.length, listings.map(l => l.id).join(',')])
@@ -456,6 +482,7 @@ function MapComponent({
         <MapControls 
           listings={stableListings}
           onRefreshVisibleListings={onRefreshVisibleListings}
+          onBackToList={onBackToList}
         />
         
         {/* Marqueurs stables gérés par Leaflet (zéro flicker) */}
