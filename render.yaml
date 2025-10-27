@@ -27,8 +27,8 @@ services:
     region: frankfurt
     plan: starter
     schedule: "*/5 * * * *"  # Toutes les 5 minutes
-    buildCommand: npm install && npx puppeteer browsers install chrome
-    startCommand: node scripts/cron-scraping-standalone.js
+    buildCommand: npm install
+    startCommand: node scripts/cron-scraping-no-puppeteer.js
     envVars:
       - key: MONGODB_URI
         sync: false
