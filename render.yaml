@@ -28,7 +28,7 @@ services:
     plan: starter
     schedule: "*/5 * * * *"  # Toutes les 5 minutes
     buildCommand: npm install
-    startCommand: node scripts/cron-scraping-standalone.js
+    startCommand: node scripts/cron-scraping-hybrid.js
     envVars:
       - key: MONGODB_URI
         sync: false
