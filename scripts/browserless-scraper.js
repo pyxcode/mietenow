@@ -8,7 +8,7 @@ const mongoose = require('mongoose')
 
 class BrowserlessScraper {
   constructor() {
-    this.browserlessUrl = 'https://chrome.browserless.io'
+    this.browserlessUrl = 'https://production-sfo.browserless.io'
     this.token = process.env.BROWSERLESS_TOKEN || 'your-token-here'
     this.baseUrl = 'https://www.immobilienscout24.de'
     this.searchUrl = 'https://www.immobilienscout24.de/Suche/S-T/Wohnung-Miete/Berlin/Berlin'
