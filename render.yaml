@@ -27,9 +27,23 @@ services:
     region: frankfurt
     plan: starter
     schedule: "*/5 * * * *"  # Toutes les 5 minutes
-    buildCommand: npm install
-    startCommand: node scripts/cron-scraping-simple.js
-    envVars: []
+    buildCommand: npm install && npx puppeteer browsers install chrome
+    startCommand: node scripts/cron-scraping-standalone.js
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: APIKEYSENDGRID
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: BRIGHT_DATA_USERNAME
+        sync: false
+      - key: BRIGHT_DATA_PASSWORD
+        sync: false
+      - key: BRIGHT_DATA_ENDPOINT
+        sync: false
 
   # 🧹 Cron Job - Nettoyage des anciennes annonces
   - type: cron
