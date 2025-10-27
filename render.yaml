@@ -20,7 +20,7 @@ services:
           name: mietenow-web
           property: host
 
-  # 🔄 Cron Job - Scraping toutes les 5 minutes
+  # 🔄 Cron Job - Scraping toutes les 5 minutes (Version Simple)
   - type: cron
     name: mietenow-scraper
     env: node
@@ -28,7 +28,7 @@ services:
     plan: starter
     schedule: "*/5 * * * *"  # Toutes les 5 minutes
     buildCommand: npm install
-    startCommand: node scripts/cron-scraping-standalone.js
+    startCommand: node scripts/cron-scraping-simple.js
     envVars: []
 
   # 🧹 Cron Job - Nettoyage des anciennes annonces
