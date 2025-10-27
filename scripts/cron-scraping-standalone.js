@@ -202,43 +202,6 @@ async function cleanupOldListings() {
   }
 }
 
-async function sendAlerts() {
-  try {
-    log('📧 Envoi des alertes aux utilisateurs...')
-    
-    // Importer le modèle Alert
-    log('📦 Chargement du modèle Alert depuis ./models/Alert.js')
-    const Alert = require('./models/Alert.js')
-    
-    // Récupérer toutes les alertes actives
-    const alerts = await Alert.find({ active: true })
-    log(`📬 ${alerts.length} alertes actives trouvées`)
-    
-    let emailsSent = 0
-    
-    for (const alert of alerts) {
-      try {
-        // Simuler l'envoi d'email (vous pouvez intégrer SendGrid ici)
-        log(`📤 Envoi d'alerte pour: ${alert.email} - ${alert.title}`)
-        
-        // TODO: Intégrer SendGrid pour l'envoi réel des emails
-        // const sgMail = require('@sendgrid/mail')
-        // sgMail.setApiKey(process.env.APIKEYSENDGRID)
-        
-        emailsSent++
-      } catch (error) {
-        log(`❌ Erreur envoi alerte ${alert.email}: ${error.message}`)
-      }
-    }
-    
-    log(`✅ ${emailsSent} alertes envoyées`)
-    return emailsSent
-    
-  } catch (error) {
-    log(`❌ Erreur lors de l'envoi des alertes: ${error.message}`)
-    throw error
-  }
-}
 
 async function main() {
   const startTime = new Date()
@@ -257,11 +220,7 @@ async function main() {
     const scrapingResults = await runScraping()
     log(`✅ Scraping terminé: ${scrapingResults} résultats`)
     
-    log('📧 Étape 4: Envoi des alertes...')
-    const emailsSent = await sendAlerts()
-    log(`✅ Alertes envoyées: ${emailsSent}`)
-    
-    log('🧹 Étape 5: Nettoyage des anciennes annonces...')
+    log('🧹 Étape 4: Nettoyage des anciennes annonces...')
     const cleanupCount = await cleanupOldListings()
     log(`✅ Nettoyage terminé: ${cleanupCount} annonces supprimées`)
     
@@ -269,7 +228,7 @@ async function main() {
     const duration = endTime.getTime() - startTime.getTime()
     
     log(`🎉 Cron terminé avec succès en ${duration}ms`)
-    log(`📊 Résumé: ${statusResults.checked} vérifiées, ${statusResults.removed} supprimées, ${emailsSent} alertes envoyées, ${cleanupCount} anciennes supprimées`)
+    log(`📊 Résumé: ${statusResults.checked} vérifiées, ${statusResults.removed} supprimées, ${cleanupCount} anciennes supprimées`)
     
   } catch (error) {
     log(`❌ Erreur fatale: ${error.message}`)

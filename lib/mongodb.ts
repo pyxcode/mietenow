@@ -1,11 +1,16 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
 
 // Fonction pour obtenir l'URI MongoDB
 const getMongoUri = () => {
   if (!MONGODB_URI) {
     throw new Error('MONGODB_URI environment variable is not defined')
+  }
+  
+  // Utiliser l'URI directe si disponible, sinon convertir mongodb+srv
+  if (MONGODB_URI.includes('mongodb://')) {
+    return MONGODB_URI
   }
   
   // Si c'est une URI mongodb+srv://, la convertir en mongodb:// direct pour éviter les problèmes DNS

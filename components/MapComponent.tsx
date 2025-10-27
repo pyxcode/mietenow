@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom'
 import React from 'react'
 // Import de Leaflet avec vérification côté client
 import L from 'leaflet'
+import MobileListingPopup from './MobileListingPopup'
 
 // Import dynamique simple pour éviter les problèmes SSR
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => ({ default: mod.MapContainer })), {
@@ -110,12 +111,14 @@ function StableMarkersLayer({
   listings, 
   selectedListing,
   onListingSelect, 
-  onListingClick 
+  onListingClick,
+  onMobilePopupOpen
 }: { 
   listings: Listing[]
   selectedListing: Listing | null
   onListingSelect: (listing: Listing) => void
   onListingClick?: (listing: Listing) => void
+  onMobilePopupOpen?: (listing: Listing) => void
 }) {
   const map = useMap()
   const layerRef = useRef<L.LayerGroup | null>(null)
@@ -205,13 +208,21 @@ function StableMarkersLayer({
             })
             console.log('Event details:', e)
             
-            if (onListingSelect) {
-              console.log('Calling onListingSelect...')
-              onListingSelect(listing)
-            }
-            if (onListingClick) {
-              console.log('Calling onListingClick...')
-              onListingClick(listing)
+            // Détecter si on est sur mobile (écran < 1024px)
+            const isMobile = window.innerWidth < 1024
+            
+            if (isMobile && onMobilePopupOpen) {
+              console.log('📱 Mobile detected - opening popup...')
+              onMobilePopupOpen(listing)
+            } else {
+              if (onListingSelect) {
+                console.log('Calling onListingSelect...')
+                onListingSelect(listing)
+              }
+              if (onListingClick) {
+                console.log('Calling onListingClick...')
+                onListingClick(listing)
+              }
             }
           })
           
@@ -435,6 +446,22 @@ function MapComponent({
 }: MapComponentProps) {
   // Stabiliser la prop listings pour éviter les re-renders inutiles
   const stableListings = useMemo(() => listings, [listings.length, listings.map(l => l.id).join(',')])
+  
+  // État pour la popup mobile
+  const [mobilePopupListing, setMobilePopupListing] = useState<Listing | null>(null)
+  const [isMobilePopupOpen, setIsMobilePopupOpen] = useState(false)
+  
+  // Fonction pour ouvrir la popup mobile
+  const openMobilePopup = useCallback((listing: Listing) => {
+    setMobilePopupListing(listing)
+    setIsMobilePopupOpen(true)
+  }, [])
+  
+  // Fonction pour fermer la popup mobile
+  const closeMobilePopup = useCallback(() => {
+    setIsMobilePopupOpen(false)
+    setMobilePopupListing(null)
+  }, [])
   
   // Vérifier que nous sommes côté client et que Leaflet est disponible
   if (typeof window === 'undefined' || !L) {

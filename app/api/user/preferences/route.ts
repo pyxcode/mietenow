@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-import { connectDB } from '@/lib/mongodb'
+// import { connectDB } from '@/lib/mongodb'
 import User from '@/models/User'
 import mongoose from 'mongoose'
 // import { getServerSession } from 'next-auth'
@@ -13,7 +13,11 @@ export const runtime = 'nodejs'
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 API GET /api/user/preferences appelée')
-    await connectDB()
+    
+    // Connexion directe à MongoDB
+    const MONGODB_URI = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
+    await mongoose.connect(MONGODB_URI)
+    console.log('✅ Connecté à MongoDB')
     
     // Récupérer l'ID utilisateur depuis les headers ou le body
     const userId = request.headers.get('x-user-id') || (await request.json()).userId

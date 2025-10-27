@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 
+// Charger les variables d'environnement en premier
+require('dotenv').config({ path: '.env.local' })
+
 const mongoose = require('mongoose')
 const nodemailer = require('nodemailer')
 
 // Configuration MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mietenow'
+const MONGODB_URI = process.env.MONGODB_URI2 ? process.env.MONGODB_URI2.replace('/?', '/mietenow-prod?') : process.env.MONGODB_URI || 'mongodb://localhost:27017/mietenow'
+
+console.log('🔍 Debug - MONGODB_URI:', MONGODB_URI)
+console.log('🔍 Debug - MONGODB_URI2:', process.env.MONGODB_URI2)
 
 // Configuration email
 const EMAIL_CONFIG = {
@@ -62,8 +68,10 @@ const Listing = mongoose.model('Listing', ListingSchema)
 
 async function connectToDatabase() {
   try {
+    console.log('🔗 Connecting to MongoDB with URI:', MONGODB_URI)
     await mongoose.connect(MONGODB_URI)
-    console.log('✅ Connected to MongoDB')
+    const db = mongoose.connection.db
+    console.log('✅ Connected to MongoDB - Database:', db.databaseName)
   } catch (error) {
     console.error('❌ MongoDB connection error:', error)
     process.exit(1)
@@ -76,8 +84,12 @@ async function sendAlertEmails() {
     
     await connectToDatabase()
     
+    // Utiliser MongoDB natif au lieu de Mongoose pour éviter les problèmes de schéma
+    const db = mongoose.connection.db
+    const alertsCollection = db.collection('alerts')
+    
     // Récupérer toutes les alertes actives
-    const alerts = await Alert.find({ active: true })
+    const alerts = await alertsCollection.find({ active: true }).toArray()
     console.log(`📧 Found ${alerts.length} active alerts`)
     
     if (alerts.length === 0) {
@@ -85,8 +97,19 @@ async function sendAlertEmails() {
       return
     }
     
+    // Afficher les alertes trouvées
+    alerts.forEach(alert => {
+      console.log('Alert found:', {
+        id: alert._id,
+        email: alert.email,
+        title: alert.title,
+        active: alert.active,
+        criteria: alert.criteria
+      })
+    })
+    
     // Configuration du transporteur email
-    const transporter = nodemailer.createTransporter(EMAIL_CONFIG)
+    const transporter = nodemailer.createTransport(EMAIL_CONFIG)
     
     // Vérifier la connexion email
     try {

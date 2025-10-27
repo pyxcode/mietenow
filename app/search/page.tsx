@@ -25,6 +25,7 @@ const MapComponent = dynamicImport(() => import('@/components/MapComponent'), {
   )
 })
 import ListingDetailView from '@/components/ListingDetailView'
+import ListingPopup from '@/components/ListingPopup'
 import type { LatLngBounds } from 'leaflet'
 import { useTranslation } from '@/hooks/useTranslation'
 import { usePlanCheck } from '@/hooks/usePlanCheck'
@@ -90,9 +91,10 @@ export default function SearchPage() {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
   const [showListingDetail, setShowListingDetail] = useState(false)
   const [clickedListing, setClickedListing] = useState<Listing | null>(null)
-  const [showMobileMap, setShowMobileMap] = useState(false)
   const [cameFromMap, setCameFromMap] = useState(false)
   const [cameFromMobileMap, setCameFromMobileMap] = useState(false)
+  const [showPopup, setShowPopup] = useState(false)
+  const [popupListing, setPopupListing] = useState<Listing | null>(null)
 
   const [bounds, setBounds] = useState<LatLngBounds | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -185,6 +187,7 @@ export default function SearchPage() {
       selectedListing: selectedListing?.title || 'null'
     })
     
+    // Toujours ouvrir la page de détail, que ce soit depuis la carte ou la liste
     setSelectedListing(listing)
     setClickedListing(listing) // Pour déclencher le zoom
     setShowListingDetail(true)
@@ -200,6 +203,12 @@ export default function SearchPage() {
         selectedListing: selectedListing?.title || 'null'
       })
     }, 100)
+  }, [])
+
+  // Fonction pour fermer la popup
+  const handleClosePopup = useCallback(() => {
+    setShowPopup(false)
+    setPopupListing(null)
   }, [])
 
 
@@ -444,30 +453,11 @@ export default function SearchPage() {
     setSelectedListing(null)
     setClickedListing(null)
     
-    // Si on venait de la carte mobile, y retourner
-    if (cameFromMobileMap) {
-      setShowMobileMap(true)
-    } else if (cameFromMap) {
-      // Si on venait de la carte desktop, rester sur la vue normale (carte + liste)
-      setShowMobileMap(false)
-    } else {
-      // Si on venait de la liste, rester sur la liste
-      setShowMobileMap(false)
-    }
-    
+    // Réinitialiser les flags de navigation
     setCameFromMap(false)
     setCameFromMobileMap(false)
   }
 
-  // Fonction pour revenir à la liste depuis la carte
-  const handleBackToListFromMap = () => {
-    setShowMobileMap(false)
-    setShowListingDetail(false)
-    setSelectedListing(null)
-    setClickedListing(null)
-    setCameFromMap(false)
-    setCameFromMobileMap(false)
-  }
 
   const filtered = useMemo(() => {
     // TOUJOURS commencer avec toutes les annonces
@@ -896,59 +886,99 @@ export default function SearchPage() {
       </header>
       
       <main className="px-4 md:px-6 lg:px-8 max-w-none pt-4 h-[calc(100vh-100px)] overflow-hidden">
-        {/* Compteur d'annonces et bouton carte mobile */}
+        {/* Compteur d'annonces */}
         <div className="mb-4 flex justify-between items-center">
           <div className="text-sm text-gray-600">{listingCountLabel}</div>
-          
-          {/* Bouton carte mobile - visible seulement sur mobile */}
-          <button
-            onClick={() => setShowMobileMap(!showMobileMap)}
-            className={`lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              showMobileMap 
-                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                : 'bg-mineral text-white hover:bg-mineral/90'
-            }`}
-          >
-            <Map className="w-4 h-4" />
-            <span>{language === 'de' ? (showMobileMap ? 'Liste' : 'Karte') : (showMobileMap ? 'List' : 'Map')}</span>
-          </button>
         </div>
 
 
-        {/* Carte mobile en plein écran */}
-        {showMobileMap && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-white">
-            <div className="h-full flex flex-col">
-              {/* Header de la carte mobile */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold">{language === 'de' ? 'Karte' : 'Map'}</h2>
-                <button
-                  onClick={() => setShowMobileMap(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  ×
-                </button>
+        {/* Layout mobile avec carte en bas (1/3) */}
+        <div className="lg:hidden flex flex-col h-[calc(100%-56px)]">
+          {/* Liste des annonces (2/3) */}
+          <div className="flex-1 overflow-auto pr-2">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
+                <p className="text-red-600 text-sm">{error}</p>
               </div>
-              
-              {/* Carte mobile */}
-              <div className="flex-1">
-                <MapComponent 
-                  listings={filtered}
-                  selectedListing={filtered.find(l => l.id === activeId) || null}
-                  clickedListing={clickedListing}
-                  onListingSelect={(listing) => setActiveId(listing.id)}
-                  onBoundsChange={(newBounds) => setBounds(newBounds)}
-                  onRefreshVisibleListings={handleRefreshVisibleListings}
-                  onListingClick={(listing) => {
-                    console.log('MapComponent onListingClick called with:', listing.title)
-                    handleListingClick(listing, true, false) // fromMap = true, fromMobileMap = false
-                  }}
-                  onBackToList={handleBackToListFromMap}
-                />
+            )}
+            {showListingDetail && selectedListing ? (
+              <ListingDetailView 
+                listing={selectedListing}
+                onBack={handleBackToList}
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {filtered.map((listing) => (
+                  <div key={listing.id} data-listing-id={listing.id} onMouseEnter={()=>handleListingHover(listing)} onMouseLeave={()=>setActiveId(prev=>prev===listing.id?null:prev)} className={`card hover:shadow-xl transition-all duration-300 cursor-pointer ${activeId===listing.id?'ring-2 ring-mineral':''}`} onClick={() => handleListingClick(listing, false, false)}>
+                    <div className="h-48 bg-gray-200 rounded-lg mb-4 overflow-hidden">
+                      {listing.images && listing.images.length > 0 ? (
+                        <img 
+                          src={listing.images[0]} 
+                          alt={listing.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                            if (nextElement) {
+                              nextElement.style.display = 'flex'
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className="w-full h-full flex items-center justify-center" style={{display: listing.images && listing.images.length > 0 ? 'none' : 'flex'}}>
+                        <Home className="w-12 h-12 text-gray-400" />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1 pr-2">{listing.title}</h3>
+                        <span className="text-2xl font-bold text-mineral whitespace-nowrap">{listing.price}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        {listing.size && (
+                          <span className="px-2 py-1 bg-gray-100 rounded-full">{listing.size} m²</span>
+                        )}
+                        <span className="px-2 py-1 bg-gray-100 rounded-full">{listing.type}</span>
+                        <span className="px-2 py-1 bg-gray-100 rounded-full">
+                          {(() => {
+                            const dateStr = listing.scrapedAt || listing.createdAt || new Date().toISOString()
+                            const listingDate = new Date(dateStr)
+                            const today = new Date()
+                            const isToday = listingDate.toLocaleDateString() === today.toLocaleDateString()
+                            
+                            if (isToday) {
+                              return language === 'de' ? 'Heute' : 'Today'
+                            } else {
+                              const diffDays = Math.ceil((Date.now() - listingDate.getTime()) / (1000 * 60 * 60 * 24))
+                              return `${diffDays} ${language === 'de' ? 'Tage' : 'days'} ago`
+                            }
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </div>
-        )}
+
+          {/* Carte mobile en bas (1/3) */}
+          <div className="h-1/3 rounded-2xl overflow-hidden mt-4">
+            <MapComponent 
+              listings={filtered}
+              selectedListing={filtered.find(l => l.id === activeId) || null}
+              clickedListing={clickedListing}
+              onListingSelect={(listing) => setActiveId(listing.id)}
+              onBoundsChange={(newBounds) => setBounds(newBounds)}
+              onRefreshVisibleListings={handleRefreshVisibleListings}
+              onListingClick={(listing) => {
+                console.log('Mobile MapComponent onListingClick called with:', listing.title)
+                handleListingClick(listing, true, false) // fromMap = true, fromMobileMap = false
+              }}
+              onBackToList={handleBackToList}
+            />
+          </div>
+        </div>
 
         {/* Split layout: 2/3 listings, 1/3 map */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100%-56px)] w-full">
@@ -1035,7 +1065,7 @@ export default function SearchPage() {
                     console.log('Desktop MapComponent onListingClick called with:', listing.title)
                     handleListingClick(listing, true, false)
                   }}
-                  onBackToList={handleBackToListFromMap}
+                  onBackToList={handleBackToList}
                 />
               </div>
         </div>

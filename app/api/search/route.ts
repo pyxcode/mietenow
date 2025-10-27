@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     const filter = buildMongoFilter(criteria)
     
     // Connecter à MongoDB et récupérer les annonces
-    const MONGODB_URI = process.env.MONGODB_URI
+    const MONGODB_URI = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
     if (!MONGODB_URI) {
       return NextResponse.json({ error: 'MONGODB_URI not configured' }, { status: 500 })
     }
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     const filter = buildMongoFilter(criteria)
     
     // Connecter à MongoDB et récupérer les annonces
-    const MONGODB_URI = process.env.MONGODB_URI
+    const MONGODB_URI = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
     if (!MONGODB_URI) {
       return NextResponse.json({ error: 'MONGODB_URI not configured' }, { status: 500 })
     }
