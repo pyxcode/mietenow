@@ -230,12 +230,12 @@ function buildEmailContent(alert, listings) {
   const listingsHtml = listings.map(listing => `
     <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9;">
       <h3 style="margin: 0 0 10px 0; color: #2563eb;">${listing.title}</h3>
-      <p style="margin: 5px 0; color: #666;"><strong>📍 Adresse:</strong> ${listing.address}</p>
-      <p style="margin: 5px 0; color: #666;"><strong>💰 Prix:</strong> ${listing.price}</p>
-      <p style="margin: 5px 0; color: #666;"><strong>📏 Surface:</strong> ${listing.size || 'N/A'}</p>
-      <p style="margin: 5px 0; color: #666;"><strong>🛏️ Chambres:</strong> ${listing.rooms || 'N/A'}</p>
-      <p style="margin: 5px 0; color: #666;"><strong>🏢 Plateforme:</strong> ${listing.platform}</p>
-      <a href="${listing.link}" style="display: inline-block; background: #2563eb; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-top: 10px;">Voir l'annonce</a>
+      <p style="margin: 5px 0; color: #666;"><strong>📍 Address:</strong> ${listing.address}</p>
+      <p style="margin: 5px 0; color: #666;"><strong>💰 Price:</strong> ${listing.price}</p>
+      <p style="margin: 5px 0; color: #666;"><strong>📏 Size:</strong> ${listing.size || 'N/A'}</p>
+      <p style="margin: 5px 0; color: #666;"><strong>🛏️ Rooms:</strong> ${listing.rooms || 'N/A'}</p>
+      <p style="margin: 5px 0; color: #666;"><strong>🏢 Platform:</strong> ${listing.platform}</p>
+      <a href="${listing.link}" style="display: inline-block; background: #2563eb; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-top: 10px;">View Listing</a>
     </div>
   `).join('')
   
@@ -244,31 +244,31 @@ function buildEmailContent(alert, listings) {
     <html>
     <head>
       <meta charset="UTF-8">
-      <title>Nouvelles annonces trouvées</title>
+      <title>New Listings Found</title>
     </head>
     <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h1 style="color: #2563eb;">🏠 Nouvelles annonces trouvées</h1>
-      <p>Bonjour,</p>
-      <p>Nous avons trouvé <strong>${listings.length}</strong> nouvelles annonces correspondant à vos critères :</p>
+      <h1 style="color: #2563eb;">🏠 New Listings Found</h1>
+      <p>Hello,</p>
+      <p>We found <strong>${listings.length}</strong> new listings matching your criteria:</p>
       
       <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="margin: 0 0 10px 0;">📋 Vos critères :</h3>
+        <h3 style="margin: 0 0 10px 0;">📋 Your Criteria:</h3>
         <ul style="margin: 0;">
-          <li><strong>Ville:</strong> ${alert.criteria.city || 'Toutes'}</li>
-          <li><strong>Type:</strong> ${alert.criteria.type || 'Tous'}</li>
-          <li><strong>Prix max:</strong> ${alert.criteria.max_price ? alert.criteria.max_price + ' €' : 'Aucun'}</li>
-          <li><strong>Surface min:</strong> ${alert.criteria.min_surface ? alert.criteria.min_surface + ' m²' : 'Aucune'}</li>
-          <li><strong>Chambres min:</strong> ${alert.criteria.min_bedrooms || 'Aucune'}</li>
+          <li><strong>City:</strong> ${alert.criteria.city || 'Any'}</li>
+          <li><strong>Type:</strong> ${alert.criteria.type || 'Any'}</li>
+          <li><strong>Max Price:</strong> ${alert.criteria.max_price ? alert.criteria.max_price + ' €' : 'None'}</li>
+          <li><strong>Min Size:</strong> ${alert.criteria.min_surface ? alert.criteria.min_surface + ' m²' : 'None'}</li>
+          <li><strong>Min Rooms:</strong> ${alert.criteria.min_bedrooms || 'None'}</li>
         </ul>
       </div>
       
-      <h2 style="color: #2563eb;">🏠 Nouvelles annonces :</h2>
+      <h2 style="color: #2563eb;">🏠 New Listings:</h2>
       ${listingsHtml}
       
       <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
         <p style="margin: 0; font-size: 14px; color: #666;">
-          Cet email a été envoyé automatiquement par MieteNow.<br>
-          Vous recevrez des alertes selon la fréquence configurée : <strong>${alert.frequency}</strong>
+          This email was sent automatically by MieteNow.<br>
+          You will receive alerts according to your configured frequency: <strong>instant</strong>
         </p>
       </div>
     </body>
