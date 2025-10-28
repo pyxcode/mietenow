@@ -182,10 +182,15 @@ async function sendAlertEmails() {
         // Envoyer l'email avec SendGrid
         const msg = {
           to: alert.email,
-          from: 'noreply@mietenow.com', // Email vérifié sur SendGrid
+          from: 'louan@pjie.fr', // Utiliser votre email vérifié
           subject: `🏠 ${newListings.length} nouvelles annonces trouvées - ${alert.title}`,
           html: emailContent
         }
+        
+        console.log('📧 Sending email with SendGrid...')
+        console.log('📧 From:', msg.from)
+        console.log('📧 To:', msg.to)
+        console.log('📧 Subject:', msg.subject)
         
         await sgMail.send(msg)
         console.log(`✅ Email sent to ${alert.email}`)
