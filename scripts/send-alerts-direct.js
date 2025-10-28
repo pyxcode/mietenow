@@ -137,10 +137,10 @@ async function sendAlertEmails() {
         }
         
         if (alert.criteria.max_price && alert.criteria.max_price > 0) {
-          // Convertir le prix en nombre pour la comparaison
+          // Utiliser $regexMatch pour extraire le prix numérique
           searchQuery.$expr = {
             $lte: [
-              { $toDouble: { $regex: { input: '$price', regex: '\\d+', options: '' } } },
+              { $toDouble: { $regexMatch: { input: '$price', regex: '\\d+' } } },
               alert.criteria.max_price
             ]
           }
@@ -151,7 +151,7 @@ async function sendAlertEmails() {
             searchQuery.$expr = {}
           }
           searchQuery.$expr.$gte = [
-            { $toDouble: { $regex: { input: '$price', regex: '\\d+', options: '' } } },
+            { $toDouble: { $regexMatch: { input: '$price', regex: '\\d+' } } },
             alert.criteria.min_price
           ]
         }
