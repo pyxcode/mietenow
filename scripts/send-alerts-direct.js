@@ -182,7 +182,7 @@ async function sendAlertEmails() {
         // Envoyer l'email avec SendGrid
         const msg = {
           to: alert.email,
-          from: 'louan@pjie.fr', // Utiliser votre email vérifié
+          from: 'julia@mietenow.iqorbis.com', // Utiliser votre email vérifié
           subject: `🏠 ${newListings.length} nouvelles annonces trouvées - ${alert.title}`,
           html: emailContent
         }
