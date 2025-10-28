@@ -196,9 +196,15 @@ async function sendAlertEmails() {
         console.log(`✅ Email sent to ${alert.email}`)
         
         // Mettre à jour la date de dernière vérification
-        await Alert.findByIdAndUpdate(alert._id, {
-          last_triggered_at: new Date()
-        })
+        try {
+          await Alert.findByIdAndUpdate(alert._id, {
+            last_triggered_at: new Date()
+          })
+          console.log(`✅ Alert timestamp updated for ${alert.email}`)
+        } catch (updateError) {
+          console.log(`⚠️ Could not update alert timestamp: ${updateError.message}`)
+          // Continue anyway, email was sent successfully
+        }
         
         emailsSent++
         
