@@ -1,0 +1,285 @@
+{
+  "totalUrls": 14,
+  "listings": [
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": false,
+      "location": "Bonitätscheck Wohnungssuche mit itsmydata online",
+      "district": "Deutschland",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/cms-uploads/geld_sparen_mit_itsmydata_1172f17587.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:37.939Z",
+      "url": "https://www.wg-gesucht.de/service/bonitaetscheck/bonitaetscheck-fuer-die-wohnungssuche-mit-itsmydata"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": false,
+      "location": "Unsere Ratgeberartikel: Vermietung und Wohnungssuche",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:39.182Z",
+      "url": "https://www.wg-gesucht.de/service/kategorie/vermietung-und-wohnungssuche"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": false,
+      "location": "10 häufige Fragen von Mietern zur Wohnungssuche",
+      "district": "Widerspruchsrecht",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/cms-uploads/Design_ohne_Titel_9_fde28632d5.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:40.447Z",
+      "url": "https://www.wg-gesucht.de/service/vermietung-und-wohnungssuche/10-haeufig-gestellte-fragen-von-mietern"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": false,
+      "location": "Direkt buchen",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/img/ntv_siegel_2024.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:41.706Z",
+      "url": "https://www.wg-gesucht.de/fuer-immobilienprofis.html"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": true,
+      "location": "Die Nr.1 für WG-Zimmer - Der Marktplatz für Wohnungen und Zimmer. WG-Gesucht.de",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/img/ntv_siegel_2024.png",
+        "https://www.wg-gesucht.de/img/home/wg-gesucht-app.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:42.948Z",
+      "url": "https://www.wg-gesucht.de/#collapseOffersAndRequests"
+    },
+    {
+      "price": null,
+      "surface": 18,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": true,
+      "location": "Angebot aufgeben: So inserieren Sie erfolgreich Ihre WG",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": "Detaillierte Informationen sind entscheidend, um Ihr Zimmer oder Ihre Wohnung schnell zu vermieten. Einige Tipps zur Anzeigengestaltung l...",
+      "pictures": [
+        "http://www.wg-gesucht.de/img/artikel/Angebot%20aufgeben-Ausstattungsmerkmale.jpg",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:44.193Z",
+      "url": "https://www.wg-gesucht.de/artikel/angebot-aufgeben-so-inserieren-sie-erfolgreich-ihre-wg-wohnung"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": false,
+      "location": "Wohnungssuche: Muster für eine erfolgreiche Wohnungsbewerbung ( Muster Bewerbung",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": "Welche Informationen enth&auml;lt eine erfolgreiche Anfrage und in welchem Stil ist sie geschrieben? Unser Muster f&uuml;r eine gelungene...",
+      "pictures": [
+        "http://www.wg-gesucht.de/img/artikel/berlin-wg-zimmer.jpg",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:45.468Z",
+      "url": "https://www.wg-gesucht.de/artikel/wohnungssuche-muster-fuer-eine-erfolgreiche-wohnungsbewerbung"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": true,
+      "location": "Apartments vermieten: Tipps für Eigentümer & Vermieter",
+      "district": "Apartment",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/cms-uploads/2_cceb714f27.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:46.738Z",
+      "url": "https://www.wg-gesucht.de/service/immobilien-allgemein/apartments-vermieten-tipps-fuer-eigentuemer-und-vermieter"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": true,
+      "location": "Wohnung gewerblich inserieren: Mit Tipps zum Erfolg",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/cms-uploads/thought_catalog_UK_78i6v_K3sc_unsplash_cd825aa013.jpg",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:48.011Z",
+      "url": "https://www.wg-gesucht.de/service/vermietung/wohnung-gewerblich-inserieren-das-sollten-anbieter-wissen-2"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": true,
+      "location": "Möblierte Wohnungen vermieten: Tipps für Vermieter",
+      "district": "Kontakt",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/cms-uploads/5_35b685f88e.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:49.274Z",
+      "url": "https://www.wg-gesucht.de/service/vermietung/moeblierte-wohnungen-vermieten-was-vermieter-wissen-sollten"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": true,
+      "location": "Mietwohnung finden | Provisionsfrei & von Privat | WG-Gesucht.de",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/img/landingpages/mietwohnung-mietvertrag.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:50.499Z",
+      "url": "https://www.wg-gesucht.de/mietwohnung.html"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": true,
+      "location": "Mietwohnung finden | Provisionsfrei & von Privat | WG-Gesucht.de",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/img/landingpages/mietwohnung-mietvertrag.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:51.847Z",
+      "url": "https://www.wg-gesucht.de/mietwohnungen.html"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": false,
+      "location": "Wohnungsmarkt Inserate - der große Wohnungsmarkt für Deutschland Österreich und die Schweiz",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/img/shop-house.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:53.076Z",
+      "url": "https://www.wg-gesucht.de/ic/wohnungsmarkt.html"
+    },
+    {
+      "price": null,
+      "surface": null,
+      "rooms": 1,
+      "type": "WG",
+      "furnished": false,
+      "location": "Wohnungen mieten mithilfe der Wohnungssuche bei WG-Gesucht.de",
+      "district": "Konto",
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "description": null,
+      "pictures": [
+        "https://www.wg-gesucht.de/img/register-sofa.png",
+        "https://www.wg-gesucht.de/img/register-sofa.png"
+      ],
+      "scrapedAt": "2025-10-29T14:12:54.463Z",
+      "url": "https://www.wg-gesucht.de/wohnungssuche.html"
+    }
+  ],
+  "errors": []
+}

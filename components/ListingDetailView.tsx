@@ -180,14 +180,20 @@ export default function ListingDetailView({ listing, onBack }: ListingDetailView
             </div>
           </div>
 
-          {/* Description */}
+          {/* Description - COMPLÈTE */}
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">
               {language === 'de' ? 'Beschreibung' : 'Description'}
             </h2>
-            <p className="text-gray-700 leading-relaxed text-sm">
-              {listing.description}
-            </p>
+            <div className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
+              {listing.description ? (
+                <p className="text-sm">{listing.description}</p>
+              ) : (
+                <p className="text-sm text-gray-500 italic">
+                  {language === 'de' ? 'Keine Beschreibung verfügbar' : 'No description available'}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Détails */}

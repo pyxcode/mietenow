@@ -894,8 +894,8 @@ export default function SearchPage() {
 
         {/* Layout mobile avec carte en bas (1/3) */}
         <div className="lg:hidden flex flex-col h-[calc(100%-56px)]">
-          {/* Liste des annonces (2/3) */}
-          <div className="flex-1 overflow-auto pr-2">
+          {/* Liste des annonces (2/3) - Plein écran quand détail affiché */}
+          <div className={`${showListingDetail ? 'flex-1' : 'flex-1'} overflow-auto pr-2`}>
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
                 <p className="text-red-600 text-sm">{error}</p>
@@ -962,28 +962,30 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Carte mobile en bas (1/3) */}
-          <div className="h-1/3 rounded-2xl overflow-hidden mt-4">
-            <MapComponent 
-              listings={filtered}
-              selectedListing={filtered.find(l => l.id === activeId) || null}
-              clickedListing={clickedListing}
-              onListingSelect={(listing) => setActiveId(listing.id)}
-              onBoundsChange={(newBounds) => setBounds(newBounds)}
-              onRefreshVisibleListings={handleRefreshVisibleListings}
-              onListingClick={(listing) => {
-                console.log('Mobile MapComponent onListingClick called with:', listing.title)
-                handleListingClick(listing, true, false) // fromMap = true, fromMobileMap = false
-              }}
-              onBackToList={handleBackToList}
-            />
-          </div>
+          {/* Carte mobile en bas (1/3) - Masquée quand détail affiché */}
+          {!showListingDetail && (
+            <div className="h-1/3 rounded-2xl overflow-hidden mt-4">
+              <MapComponent 
+                listings={filtered}
+                selectedListing={filtered.find(l => l.id === activeId) || null}
+                clickedListing={clickedListing}
+                onListingSelect={(listing) => setActiveId(listing.id)}
+                onBoundsChange={(newBounds) => setBounds(newBounds)}
+                onRefreshVisibleListings={handleRefreshVisibleListings}
+                onListingClick={(listing) => {
+                  console.log('Mobile MapComponent onListingClick called with:', listing.title)
+                  handleListingClick(listing, true, false) // fromMap = true, fromMobileMap = false
+                }}
+                onBackToList={handleBackToList}
+              />
+            </div>
+          )}
         </div>
 
         {/* Split layout: 2/3 listings, 1/3 map */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100%-56px)] w-full">
-          {/* Left: scrollable listings (2/3) */}
-          <div className="flex flex-col h-full pr-2 overflow-hidden lg:col-span-2">
+          {/* Left: scrollable listings (2/3) - Plein écran quand détail affiché */}
+          <div className={`flex flex-col h-full pr-2 overflow-hidden ${showListingDetail ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
                 <p className="text-red-600 text-sm">{error}</p>
@@ -1052,22 +1054,24 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Right: full-height map (1/3) */}
-              <div className="rounded-2xl overflow-hidden h-full lg:col-span-1">
-                <MapComponent 
-                  listings={filtered}
-                  selectedListing={filtered.find(l => l.id === activeId) || null}
-                  clickedListing={clickedListing}
-                  onListingSelect={(listing) => setActiveId(listing.id)}
-                  onBoundsChange={(newBounds) => setBounds(newBounds)}
-                  onRefreshVisibleListings={handleRefreshVisibleListings}
-                  onListingClick={(listing) => {
-                    console.log('Desktop MapComponent onListingClick called with:', listing.title)
-                    handleListingClick(listing, true, false)
-                  }}
-                  onBackToList={handleBackToList}
-                />
-              </div>
+          {/* Right: full-height map (1/3) - Masquée quand détail affiché */}
+          {!showListingDetail && (
+            <div className="rounded-2xl overflow-hidden h-full lg:col-span-1">
+              <MapComponent 
+                listings={filtered}
+                selectedListing={filtered.find(l => l.id === activeId) || null}
+                clickedListing={clickedListing}
+                onListingSelect={(listing) => setActiveId(listing.id)}
+                onBoundsChange={(newBounds) => setBounds(newBounds)}
+                onRefreshVisibleListings={handleRefreshVisibleListings}
+                onListingClick={(listing) => {
+                  console.log('Desktop MapComponent onListingClick called with:', listing.title)
+                  handleListingClick(listing, true, false)
+                }}
+                onBackToList={handleBackToList}
+              />
+            </div>
+          )}
         </div>
       </main>
 

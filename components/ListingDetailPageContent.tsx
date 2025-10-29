@@ -214,14 +214,20 @@ export default function ListingPage() {
                 </div>
               </div>
 
-              {/* Description */}
+              {/* Description - COMPLÈTE */}
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">
                   {language === 'de' ? 'Beschreibung' : 'Description'}
                 </h2>
-                <p className="text-gray-700 leading-relaxed">
-                  {listing.description}
-                </p>
+                <div className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
+                  {listing.description ? (
+                    <p>{listing.description}</p>
+                  ) : (
+                    <p className="text-gray-500 italic">
+                      {language === 'de' ? 'Keine Beschreibung verfügbar' : 'No description available'}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Détails */}
