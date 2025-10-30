@@ -23,6 +23,7 @@ interface Listing {
   lng: number
   furnished?: boolean
   features?: string[]
+  url_source?: string // Added for the new logic
 }
 
 export default function ListingPage() {
@@ -85,8 +86,8 @@ export default function ListingPage() {
   const handleApply = () => {
     if (listing?.link && listing.link !== '#') {
       window.open(listing.link, '_blank')
-    } else if (listing?.url && listing.url !== '#') {
-      window.open(listing.url, '_blank')
+    } else if (listing?.url_source && listing.url_source !== '#') {
+      window.open(listing.url_source, '_blank')
     } else {
       alert(language === 'de' ? 'Kein Link verfügbar' : 'No link available')
     }
@@ -339,9 +340,9 @@ export default function ListingPage() {
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
             <button
               onClick={handleApply}
-              disabled={(!listing.link || listing.link === '#') && (!listing.url || listing.url === '#')}
+              disabled={(!listing.link || listing.link === '#') && (!listing.url_source || listing.url_source === '#')}
               className={`w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-200 ${
-                (listing.link && listing.link !== '#') || (listing.url && listing.url !== '#')
+                (listing.link && listing.link !== '#') || (listing.url_source && listing.url_source !== '#')
                   ? 'bg-gradient-to-r from-mineral to-mineral/90 text-white hover:from-mineral/90 hover:to-mineral shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
@@ -350,7 +351,7 @@ export default function ListingPage() {
             </button>
             
             <p className="text-xs text-gray-500 text-center mt-3">
-              {(listing.link && listing.link !== '#') || (listing.url && listing.url !== '#')
+              {(listing.link && listing.link !== '#') || (listing.url_source && listing.url_source !== '#')
                 ? (language === 'de' 
                     ? 'Sie werden zur Originalanzeige weitergeleitet' 
                     : 'You will be redirected to the original listing')
