@@ -4,16 +4,22 @@ import { MongoClient } from 'mongodb'
 export const dynamic = 'force-dynamic'
 
 function buildMongoFilter(criteria: any) {
-  const filter: any = {}
+  const filter: any = {
+    // Toujours exclure les listings inactifs
+    active: { $ne: false }
+  }
   
-  // Filtre par ville
-  if (criteria.city) {
+  // Filtre par ville - SIMPLIFIÉ: Pour Berlin, on ne filtre PAS par ville
+  // Car la plupart des listings sont à Berlin et ont des localisations mal formatées
+  if (criteria.city && criteria.city.toLowerCase() !== 'berlin') {
+    // Pour les autres villes, utiliser le filtre strict
     filter.$or = [
       { location: { $regex: criteria.city, $options: 'i' } },
       { address: { $regex: criteria.city, $options: 'i' } },
       { district: { $regex: criteria.city, $options: 'i' } }
     ]
   }
+  // Si city === 'berlin' ou pas de city, on n'ajoute pas de filtre de ville
   
   // Filtre par prix
   if (criteria.minPrice || criteria.maxPrice) {
@@ -48,14 +54,26 @@ function buildMongoFilter(criteria: any) {
     }
   }
   
-  // Filtre par type
+  // Filtre par type - mapper les types frontend vers les types MongoDB
   if (criteria.type && criteria.type !== 'Any') {
-    filter.type = criteria.type
+    const typeMapping = {
+      'room': 'WG',
+      'studio': 'studio', 
+      'apartment': 'apartment',
+      'house': 'house'
+    }
+    const mongoType = typeMapping[criteria.type.toLowerCase()] || criteria.type
+    filter.type = mongoType
   }
   
   // Filtre par quartier
   if (criteria.districts && criteria.districts.length > 0) {
     filter.district = { $in: criteria.districts }
+  }
+  
+  // Filtre par furnished
+  if (criteria.furnished !== undefined) {
+    filter.furnished = criteria.furnished === 'true' || criteria.furnished === true
   }
   
   return filter
@@ -73,6 +91,7 @@ export async function GET(request: NextRequest) {
       minSize: searchParams.get('minSize') || undefined,
       maxSize: searchParams.get('maxSize') || undefined,
       type: searchParams.get('type') || undefined,
+      furnished: searchParams.get('furnished') || undefined,
       districts: searchParams.get('districts')?.split(',') || undefined
     }
 
@@ -92,11 +111,20 @@ export async function GET(request: NextRequest) {
     const db = client.db('mietenow-prod')
     const collection = db.collection('listings')
     
+    const limit = parseInt(searchParams.get('limit') || '300')
+    
+    // Debug: Log the filter being used
+    console.log('🔍 MongoDB filter:', JSON.stringify(filter, null, 2))
+    
+    // Sort by most recent - try different date fields (listings may have different field names)
+    // MongoDB will use the first field that exists
     const listings = await collection
       .find(filter)
-      .sort({ createdAt: -1 })
-      .limit(300)
+      .sort({ createdAt: -1, created_at: -1, scraped_at: -1 })
+      .limit(limit)
       .toArray()
+    
+    console.log(`📊 Found ${listings.length} listings with filter`)
     
     await client.close()
 

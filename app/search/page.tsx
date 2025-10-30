@@ -178,23 +178,19 @@ export default function SearchPage() {
     console.log('🎯 handleListingClick called with:', {
       title: listing.title,
       id: listing.id,
+      url: listing.url,
       fromMap,
       fromMobileMap
     })
     
-    console.log('📊 Current state before update:', {
-      showListingDetail,
-      selectedListing: selectedListing?.title || 'null'
-    })
-    
-    // Toujours ouvrir la page de détail, que ce soit depuis la carte ou la liste
+    // Toujours afficher la page de détail interne d'abord
     setSelectedListing(listing)
     setClickedListing(listing) // Pour déclencher le zoom
     setShowListingDetail(true)
     setCameFromMap(fromMap)
     setCameFromMobileMap(fromMobileMap)
     
-    console.log('✅ State update calls made')
+    console.log('✅ Showing internal detail view')
     
     // Vérifier l'état après un court délai
     setTimeout(() => {
@@ -231,7 +227,7 @@ export default function SearchPage() {
         
         // Récupérer les préférences utilisateur en parallèle
         const [listingsResponse, preferencesResponse] = await Promise.all([
-          fetch('/api/search?city=Berlin&limit=50'),
+          fetch('/api/search?city=Berlin&limit=500'), // Augmenté à 500 pour voir tous les listings
           user ? fetch('/api/user/preferences') : Promise.resolve(null)
         ])
         
@@ -251,7 +247,7 @@ export default function SearchPage() {
             rooms: listing.rooms || 1,
             size: listing.size || null,
             images: listing.images || (listing.image ? [listing.image] : []),
-            url: listing.link || '#',
+            url: listing.url_source || listing.link || '#',
             source: listing.platform || 'unknown',
             features: listing.features || [],
             lat: listing.lat || 52.5208, // Fallback vers le centre de Berlin
@@ -265,7 +261,7 @@ export default function SearchPage() {
             createdAt: listing.createdAt || new Date().toISOString(),
             address: listing.address || 'Berlin, Germany',
             platform: listing.platform || 'unknown',
-            link: listing.link || '#'
+            link: listing.url_source || listing.link || '#'
           }))
           
           setAllListings(transformedListings)
@@ -932,29 +928,63 @@ export default function SearchPage() {
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
                         <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1 pr-2">{listing.title}</h3>
-                        <span className="text-2xl font-bold text-mineral whitespace-nowrap">{listing.price}</span>
+                        <span className="text-2xl font-bold text-mineral whitespace-nowrap">{listing.price} €</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        {listing.size && (
-                          <span className="px-2 py-1 bg-gray-100 rounded-full">{listing.size} m²</span>
+                      {/* Key filter criteria prominently displayed */}
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        {listing.furnished !== undefined && (
+                          <span className={`px-3 py-1 rounded-full font-medium ${
+                            listing.furnished 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-orange-100 text-orange-800'
+                          }`}>
+                            {listing.furnished ? (language === 'de' ? 'Möbliert' : 'Furnished') : (language === 'de' ? 'Unmöbliert' : 'Unfurnished')}
+                          </span>
                         )}
-                        <span className="px-2 py-1 bg-gray-100 rounded-full">{listing.type}</span>
-                        <span className="px-2 py-1 bg-gray-100 rounded-full">
+                        {listing.rooms && (
+                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
+                            {listing.rooms} {language === 'de' ? 'Zimmer' : 'Bedrooms'}
+                          </span>
+                        )}
+                        {listing.size && (
+                          <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
+                            {listing.size} m²
+                          </span>
+                        )}
+                        <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full font-medium capitalize">
+                          {listing.type}
+                        </span>
+                      </div>
+
+                      {/* Location and time */}
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <MapPin className="w-4 h-4" />
+                          <span className="line-clamp-1">{listing.district || listing.location}</span>
+                        </div>
+                        <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
                           {(() => {
                             const dateStr = listing.scrapedAt || listing.createdAt || new Date().toISOString()
                             const listingDate = new Date(dateStr)
-                            const today = new Date()
-                            const isToday = listingDate.toLocaleDateString() === today.toLocaleDateString()
+                            const now = new Date()
+                            const diffMs = now.getTime() - listingDate.getTime()
+                            const diffMinutes = Math.floor(diffMs / (1000 * 60))
+                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+                            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
                             
-                            if (isToday) {
-                              return language === 'de' ? 'Heute' : 'Today'
+                            if (diffMinutes < 60) {
+                              return `${diffMinutes} ${language === 'de' ? 'Min' : 'min'} ago`
+                            } else if (diffHours < 24) {
+                              return `${diffHours} ${language === 'de' ? 'Std' : 'h'} ago`
                             } else {
-                              const diffDays = Math.ceil((Date.now() - listingDate.getTime()) / (1000 * 60 * 60 * 24))
                               return `${diffDays} ${language === 'de' ? 'Tage' : 'days'} ago`
                             }
                           })()}
                         </span>
                       </div>
+
+                      {/* Description - shorter and more focused */}
+                      <p className="text-sm text-gray-600 line-clamp-2">{listing.description}</p>
                     </div>
                   </div>
                 ))}
@@ -1023,29 +1053,63 @@ export default function SearchPage() {
                       <div className="space-y-3">
                         <div className="flex justify-between items-start">
                           <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1 pr-2">{listing.title}</h3>
-                          <span className="text-2xl font-bold text-mineral whitespace-nowrap">{listing.price}</span>
+                          <span className="text-2xl font-bold text-mineral whitespace-nowrap">{listing.price} €</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          {listing.size && (
-                            <span className="px-2 py-1 bg-gray-100 rounded-full">{listing.size} m²</span>
+                        {/* Key filter criteria prominently displayed */}
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                          {listing.furnished !== undefined && (
+                            <span className={`px-3 py-1 rounded-full font-medium ${
+                              listing.furnished 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-orange-100 text-orange-800'
+                            }`}>
+                              {listing.furnished ? (language === 'de' ? 'Möbliert' : 'Furnished') : (language === 'de' ? 'Unmöbliert' : 'Unfurnished')}
+                            </span>
                           )}
-                          <span className="px-2 py-1 bg-gray-100 rounded-full">{listing.type}</span>
-                          <span className="px-2 py-1 bg-gray-100 rounded-full">
+                          {listing.rooms && (
+                            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
+                              {listing.rooms} {language === 'de' ? 'Zimmer' : 'Bedrooms'}
+                            </span>
+                          )}
+                          {listing.size && (
+                            <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
+                              {listing.size} m²
+                            </span>
+                          )}
+                          <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full font-medium capitalize">
+                            {listing.type}
+                          </span>
+                        </div>
+
+                        {/* Location and time */}
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-1 text-gray-600">
+                            <MapPin className="w-4 h-4" />
+                            <span className="line-clamp-1">{listing.district || listing.location}</span>
+                          </div>
+                          <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
                             {(() => {
                               const dateStr = listing.scrapedAt || listing.createdAt || new Date().toISOString()
                               const listingDate = new Date(dateStr)
-                              const today = new Date()
-                              const isToday = listingDate.toLocaleDateString() === today.toLocaleDateString()
+                              const now = new Date()
+                              const diffMs = now.getTime() - listingDate.getTime()
+                              const diffMinutes = Math.floor(diffMs / (1000 * 60))
+                              const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+                              const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
                               
-                              if (isToday) {
-                                return language === 'de' ? 'Heute' : 'Today'
+                              if (diffMinutes < 60) {
+                                return `${diffMinutes} ${language === 'de' ? 'Min' : 'min'} ago`
+                              } else if (diffHours < 24) {
+                                return `${diffHours} ${language === 'de' ? 'Std' : 'h'} ago`
                               } else {
-                                const diffDays = Math.ceil((Date.now() - listingDate.getTime()) / (1000 * 60 * 60 * 24))
                                 return `${diffDays} ${language === 'de' ? 'Tage' : 'days'} ago`
                               }
                             })()}
                           </span>
                         </div>
+
+                        {/* Description - shorter and more focused */}
+                        <p className="text-sm text-gray-600 line-clamp-2">{listing.description}</p>
                       </div>
                     </div>
                   ))}

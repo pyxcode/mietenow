@@ -12,8 +12,10 @@ export interface UserPreferences {
   districts?: string[]
   furnishing?: 'Any' | 'Furnished' | 'Unfurnished'
   address?: string
+  exact_address?: string
   radius?: number
   coordinates?: {lat: number, lng: number}
+  min_bedrooms?: number
 }
 
 export interface OnboardingState {

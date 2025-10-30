@@ -15,6 +15,20 @@ import { URL } from 'url'
 import { writeFileSync } from 'fs'
 import crypto from 'crypto'
 import { MongoClient } from 'mongodb'
+import { getSiteConfig } from './site-configs.js'
+// Dynamic import for OpenAI to avoid errors if not configured
+let extractListingWithOpenAI = null
+async function loadOpenAIExtractor() {
+  if (!extractListingWithOpenAI && process.env.OPENAI_API_KEY) {
+    try {
+      const module = await import('../lib/openai-extractor.js')
+      extractListingWithOpenAI = module.extractListingWithOpenAI
+    } catch (e) {
+      console.log('⚠️ OpenAI module not available:', e.message)
+    }
+  }
+  return extractListingWithOpenAI
+}
 
 const DEFAULT_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -45,6 +59,12 @@ class HttpOnlyCrawler {
     
     // Detect provider from URL
     this.provider = this.detectProvider(rootUrl)
+    
+    // Site-specific configuration - S'ADAPTE AUTOMATIQUEMENT À CHAQUE SITE
+    this.siteConfig = getSiteConfig(rootUrl) || {}
+    if (this.siteConfig) {
+      console.log(`✅ Configuration spécifique chargée pour: ${this.provider}`)
+    }
     
     // Learning system: tracks successful patterns
     this.learnedPatterns = {
@@ -551,40 +571,507 @@ class HttpOnlyCrawler {
   }
 
   /**
-   * Check if page is a listings index
+   * Vérifie si une URL ressemble à une vraie URL de listing (pas blog, pas info)
    */
-  async isListingsIndex(pageUrl) {
-    try {
-      const response = await this.fetch(pageUrl)
-      if (!response || response.statusCode !== 200) return false
-
-      const $ = cheerio.load(response.bodyText)
+  isValidListingUrl(url) {
+    const urlLower = url.toLowerCase()
+    
+    // EXCLUSION: URLs qui ne sont PAS des listings
+    const exclusionPatterns = [
+      // Pages d'information
+      /\/blog\//, /\/article\//, /\/news\//, /\/press\//, /\/magazine\//,
+      /\/about/, /\/contact/, /\/impressum/, /\/datenschutz/, /\/privacy/, /\/legal/,
+      /\/faq/, /\/help/, /\/support/, /\/login/, /\/signup/, /\/register/,
+      /\/account/, /\/profile/, /\/settings/, /\/admin/, /\/dashboard/,
       
-      // Look for repeated listing blocks (common patterns)
-      const listingSelectors = [
-        'article',
-        '[data-listing-id]',
-        '[data-id]',
-        '.listing',
-        '.result-item',
-        '.property-item',
-        '.offer-item',
-        '.ad-item'
-      ]
-
-      let listingCount = 0
-      for (const selector of listingSelectors) {
-        const count = $(selector).length
-        if (count > 8) {
-          listingCount = count
-          break
-        }
+      // Pages de recherche et filtres
+      /\/search\?/, /\/suche\?/, /\/filter/, /\/category/, /\/kategorie/,
+      /\/tag/, /\/tags/, /\/archive/, /\/archiv/, /\/sitemap/, /\/robots/,
+      /\/feed/, /\/rss/, /\/api\//,
+      
+      // Sites de réservation/tourisme (pas de location longue durée)
+      /spotahome/, /booking/, /airbnb/, /hostel/, /pension/, /gasthaus/,
+      /hotel/, /travel/, /reise/, /urlaub/, /trip/, /vacation/,
+      
+      // Pages de résultats de recherche génériques
+      /\/results/, /\/suchergebnisse/, /\/listings\?/, /\/wohnungen\?/,
+      /\/mieten\?/, /\/rent\?/, /\/offers\?/, /\/angebote\?/,
+      
+      // Fichiers
+      /\.(pdf|doc|docx|xls|xlsx|zip|rar|jpg|jpeg|png|gif|svg|css|js|map|txt|xml|ico|woff|woff2|ttf|eot|otf|mp4|mp3|avi|mov|wmv|flv|webm|ogg|wav|aac|m4a|m4v|3gp|3g2|mkv|ts|mts|m2ts|vob|asf|rm|rmvb|divx|xvid|mpg|mpeg|mpe|m1v|m2v|m4v|3gp|3g2|3gpp|3gpp2|amv|asf|avi|bik|bix|box|cam|dat|divx|drc|dv|dvr-ms|evo|f4v|fli|flv|gvi|gxf|h264|h265|hevc|ivf|m1v|m2ts|m2v|m4v|mkv|mod|mp2|mp4|mpe|mpeg|mpg|mpl|mpls|mts|mxf|nsv|nuv|ogg|ogm|ogv|ogx|ps|rec|rm|rmvb|roq|rpl|smi|smil|srt|ssa|sub|sup|swf|tivo|tod|ts|tts|txd|vob|vro|webm|wm|wmv|wtv|xesc|xvid|yuv)$/,
+      
+      // Paramètres de recherche
+      /\?.*(search|suche|filter|category|kategorie|tag|page|p=)/,
+      /\?.*(sort|order|price|min|max|rooms|size|surface|type|furnished)/,
+      
+      // Pages de listing génériques (pas d'annonce spécifique)
+      /\/listings$/, /\/wohnungen$/, /\/mieten$/, /\/rent$/, /\/offers$/,
+      /\/angebote$/, /\/results$/, /\/suchergebnisse$/
+    ]
+    
+    // Vérifier les exclusions
+    for (const pattern of exclusionPatterns) {
+      if (pattern.test(urlLower)) {
+        return false
       }
+    }
+    
+    // INCLUSION: URLs qui RESSEMBLENT à des listings spécifiques
+    const inclusionPatterns = [
+      // Patterns avec ID numérique (le plus fiable)
+      /\/\d{4,}\.html$/,           // /12345.html
+      /\/\d{4,}$/,                 // /12345 (sans extension)
+      
+      // Patterns avec UUID ou slug
+      /\/expose\/[\w-]+$/,         // /expose/uuid
+      /\/anzeige\/\d+$/,           // /anzeige/12345
+      /\/wohnung\/\d+$/,           // /wohnung/12345
+      /\/listing\/\d+$/,           // /listing/12345
+      /\/property\/\d+$/,          // /property/12345
+      /\/immobilie\/\d+$/,         // /immobilie/12345
+      /\/ad\/\d+$/,                // /ad/12345
+      /\/offer\/\d+$/,             // /offer/12345
+      /\/rental\/\d+$/,            // /rental/12345
+      /\/mieten\/\d+$/,            // /mieten/12345
+      /\/vermieten\/\d+$/,         // /vermieten/12345
+      /\/apartment\/\d+$/,         // /apartment/12345
+      /\/studio\/\d+$/,            // /studio/12345
+      /\/room\/\d+$/,              // /room/12345
+      /\/zimmer\/\d+$/,            // /zimmer/12345
+      /\/wg\/\d+$/,                // /wg/12345
+      /\/haus\/\d+$/,              // /haus/12345
+      /\/house\/\d+$/,             // /house/12345
+      /\/flat\/\d+$/,              // /flat/12345
+      /\/appartement\/\d+$/,       // /appartement/12345
+      /\/wohnraum\/\d+$/,          // /wohnraum/12345
+      /\/unterkunft\/\d+$/,        // /unterkunft/12345
+      /\/accommodation\/\d+$/,     // /accommodation/12345
+      /\/rent\/\d+$/,              // /rent/12345
+      /\/miete\/\d+$/,             // /miete/12345
+      /\/vermietung\/\d+$/         // /vermietung/12345
+    ]
+    
+    // Vérifier les inclusions
+    for (const pattern of inclusionPatterns) {
+      if (pattern.test(urlLower)) {
+        return true
+      }
+    }
+    
+    return false
+  }
 
-      return listingCount > 8
-    } catch (error) {
+  /**
+   * Vérifie si c'est définitivement PAS une page de listing
+   */
+  isDefinitelyNotListing(html, url) {
+    const $ = cheerio.load(html)
+    const text = $.text().toLowerCase()
+    const urlLower = url.toLowerCase()
+    
+    // EXCLUSION: Mots-clés qui indiquent que ce n'est définitivement PAS une listing
+    const exclusionKeywords = [
+      'blog', 'article', 'news', 'press', 'magazine',
+      'impressum', 'datenschutz', 'privacy', 'legal',
+      'about', 'contact', 'über uns', 'kontakt',
+      'faq', 'help', 'hilfe', 'support',
+      'login', 'signup', 'register', 'anmelden',
+      'job', 'career', 'karriere', 'stellenangebot',
+      'event', 'veranstaltung', 'calendar',
+      'shop', 'buy', 'kaufen', 'verkauf',
+      'forum', 'community', 'discussion',
+      'advertisement', 'werbung', 'ads',
+      '404', 'not found', 'seite nicht gefunden',
+      'error', 'fehler', 'page not found'
+    ]
+    
+    // Vérifier l'URL
+    for (const keyword of exclusionKeywords) {
+      if (urlLower.includes(keyword) && !urlLower.includes('expose')) {
+        return true
+      }
+    }
+    
+    // Vérifier qu'il n'y a pas de structure de blog typique
+    const hasBlogStructure = $('article time').length > 3 || 
+                             $('.post-date').length > 2 ||
+                             $('.author').length > 2 ||
+                             $('.blog-post').length > 1 ||
+                             $('[class*="blog"]').length > 5
+    
+    return hasBlogStructure
+  }
+
+  /**
+   * Vérifie si c'est une vraie page de listing (pas un blog, pas une page d'info)
+   */
+  isValidListingPage(html, url) {
+    const $ = cheerio.load(html)
+    const text = $.text().toLowerCase()
+    const urlLower = url.toLowerCase()
+    
+    // EXCLUSION: Mots-clés qui indiquent que ce n'est PAS une listing
+    const exclusionKeywords = [
+      'blog', 'article', 'news', 'press', 'magazine',
+      'impressum', 'datenschutz', 'privacy', 'legal',
+      'about', 'contact', 'über uns', 'kontakt',
+      'faq', 'help', 'hilfe', 'support',
+      'login', 'signup', 'register', 'anmelden',
+      'job', 'career', 'karriere', 'stellenangebot',
+      'event', 'veranstaltung', 'calendar',
+      'shop', 'buy', 'kaufen', 'verkauf',
+      'forum', 'community', 'discussion',
+      'advertisement', 'werbung', 'ads',
+      'cookie', 'javascript', 'enable javascript',
+      '404', 'not found', 'seite nicht gefunden',
+      'error', 'fehler', 'page not found'
+    ]
+    
+    // Vérifier l'URL
+    for (const keyword of exclusionKeywords) {
+      if (urlLower.includes(keyword)) {
+        return false
+      }
+    }
+    
+    // Vérifier le contenu HTML
+    for (const keyword of exclusionKeywords) {
+      if (text.includes(keyword) && text.split(keyword).length > 3) {
+        // Si le mot apparaît plusieurs fois, c'est probablement pas une listing
+        return false
+      }
+    }
+    
+    // INCLUSION: Mots-clés qui indiquent que c'est une vraie listing
+    const listingKeywords = [
+      'miete', 'rent', 'wohnung', 'apartment',
+      'preis', 'price', '€', 'eur',
+      'm²', 'qm', 'surface', 'fläche',
+      'zimmer', 'rooms', 'bedroom',
+      'verfügbar', 'available', 'ab',
+      'expose', 'angebot', 'offering',
+      'immobilie', 'property', 'real estate'
+    ]
+    
+    // Doit contenir au moins 2 mots-clés de listing
+    let listingKeywordCount = 0
+    for (const keyword of listingKeywords) {
+      if (text.includes(keyword)) {
+        listingKeywordCount++
+      }
+    }
+    
+    if (listingKeywordCount < 2) {
       return false
     }
+    
+    // Vérifier la présence d'un prix valide
+    const priceMatch = text.match(/(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*€|€\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)/i)
+    if (!priceMatch) {
+      return false
+    }
+    
+    // Vérifier la présence d'une surface ou de chambres (au moins un des deux)
+    const hasSurface = /(\d{1,4})\s*(m²|qm|m2)/i.test(text)
+    const hasRooms = /(\d+)\s*(zimmer|rooms?|bedrooms?)/i.test(text)
+    
+    if (!hasSurface && !hasRooms) {
+      return false
+    }
+    
+    // Vérifier qu'il n'y a pas trop de liens (signe de navigation/blog)
+    const linkCount = $('a[href]').length
+    const textLength = text.length
+    if (linkCount > 50 && linkCount / (textLength / 100) > 2) {
+      // Trop de liens par rapport au texte = probablement une page de navigation
+      return false
+    }
+    
+    // Vérifier la structure: doit avoir un titre principal
+    const hasTitle = $('h1').length > 0 || $('title').text().length > 10
+    if (!hasTitle) {
+      return false
+    }
+    
+    // Vérifier qu'il n'y a pas de structure de blog typique
+    const hasBlogStructure = $('article time').length > 0 || 
+                             $('.post-date').length > 0 ||
+                             $('.author').length > 0 ||
+                             $('.blog-post').length > 0 ||
+                             $('[class*="blog"]').length > 3
+    
+    if (hasBlogStructure) {
+      return false
+    }
+    
+    // Vérifier les meta tags
+    const ogType = $('meta[property="og:type"]').attr('content')
+    if (ogType && (ogType.includes('article') || ogType.includes('blog'))) {
+      return false
+    }
+    
+    return true
+  }
+
+  /**
+   * Détecte si c'est une PAGE DE LISTE DE LISTINGS (avec 10-290 liens)
+   * Cette fonction identifie les vraies pages de recherche/listing index
+   */
+  isListingIndexPageAdvanced(html, url) {
+    const $ = cheerio.load(html)
+    const urlLower = url.toLowerCase()
+    
+    // Mots-clés dans l'URL qui indiquent une page de recherche/liste
+    const searchPageKeywords = [
+      'suche', 'search', 'listings', 'wohnungen', 'mieten',
+      'rent', 'offers', 'angebote', 'results', 'suchergebnisse'
+    ]
+    
+    const hasSearchKeyword = searchPageKeywords.some(kw => urlLower.includes(kw))
+    
+    // Compter les liens qui ressemblent à des listings
+    let listingLinkCount = 0
+    const listingUrls = new Set()
+    
+    // Pour WG-Gesucht spécifiquement: chercher les data-id et les liens /12345.html
+    if (this.provider === 'wg-gesucht') {
+      // Pattern 1: Extraire data-id="12345" et construire /12345.html
+      const dataIdMatches = html.match(/data-id="(\d{4,})"/g)
+      if (dataIdMatches) {
+        dataIdMatches.forEach(match => {
+          const id = match.match(/\d{4,}/)[0]
+          const listingUrl = `${this.rootDomain}/${id}.html`
+          listingUrls.add(listingUrl)
+          listingLinkCount++
+        })
+      }
+      
+      // Pattern 2: Chercher les liens /12345.html directement dans les href
+      const linkMatches = html.match(/href="([^"]*\/(\d{4,})\.html[^"]*)"/gi)
+      if (linkMatches) {
+        linkMatches.forEach(linkMatch => {
+          const hrefMatch = linkMatch.match(/href="([^"]+)"/i)
+          if (hrefMatch) {
+            try {
+              const absoluteUrl = new URL(hrefMatch[1], url).href
+              if (absoluteUrl.match(/\/\d{4,}\.html$/)) {
+                listingUrls.add(absoluteUrl)
+                listingLinkCount++
+              }
+            } catch (e) {}
+          }
+        })
+      }
+    } else {
+      // Pour les autres sites: méthode générique
+      $('a[href]').each((i, el) => {
+        const href = $(el).attr('href')
+        if (!href) return
+        
+        try {
+          const absoluteUrl = new URL(href, url).href
+          if (this.isValidListingUrl(absoluteUrl)) {
+            listingUrls.add(absoluteUrl)
+            listingLinkCount++
+          }
+        } catch (e) {}
+      })
+    }
+    
+    // Une vraie page de liste a 10-290 liens de listings
+    const isListingIndex = listingLinkCount >= 10 && listingLinkCount <= 290
+    
+    // Aussi vérifier la structure HTML: plusieurs conteneurs similaires
+    const containers = [
+      'article',
+      '.listing-item',
+      '.result-item',
+      '.property-item',
+      '.offer-item',
+      '[data-id]',
+      '.card',
+      '.listing'
+    ]
+    
+    let containerCount = 0
+    for (const selector of containers) {
+      const count = $(selector).length
+      if (count >= 10 && count <= 290) {
+        containerCount = count
+        break
+      }
+    }
+    
+    return {
+      isListingIndex: isListingIndex || containerCount >= 10,
+      listingLinkCount: listingUrls.size,
+      containerCount,
+      hasSearchKeyword,
+      listingUrls: Array.from(listingUrls)
+    }
+  }
+
+  /**
+   * Recherche approfondie: cherche dans les scripts JS, data-*, JSON, etc.
+   */
+  deepSearchForListings(html, url) {
+    const $ = cheerio.load(html)
+    const listingUrls = new Set()
+    const apiEndpoints = []
+    
+    // 1. Chercher dans les scripts JavaScript
+    $('script').each((i, el) => {
+      const scriptContent = $(el).html() || ''
+      
+      // Chercher des IDs de listings dans les scripts
+      const idPatterns = [
+        /\/\d{4,}\.html/g,
+        /\/listing\/\d{4,}/g,
+        /\/expose\/[\w-]+/g,
+        /\/anzeige\/\d{4,}/g,
+        /data-id["']?\s*[:=]\s*["']?(\d{4,})/g,
+        /listingId["']?\s*[:=]\s*["']?(\d{4,})/g,
+        /id["']?\s*[:=]\s*["']?(\d{4,})["']?\s*[,}]/g,
+      ]
+      
+      idPatterns.forEach(pattern => {
+        const matches = scriptContent.match(pattern)
+        if (matches) {
+          matches.forEach(match => {
+            try {
+              // Si c'est déjà une URL complète
+              if (match.includes('http')) {
+                const absoluteUrl = new URL(match, url).href
+                if (this.isValidListingUrl(absoluteUrl)) {
+                  listingUrls.add(absoluteUrl)
+                }
+              } else {
+                // C'est un ID ou un path
+                const idMatch = match.match(/\d{4,}/)
+                const uuidMatch = match.match(/[\w-]{8,}/)
+                
+                if (idMatch) {
+                  const id = idMatch[0]
+                  const listingUrl = `${this.rootDomain}/${id}.html`
+                  if (this.isValidListingUrl(listingUrl)) {
+                    listingUrls.add(listingUrl)
+                  }
+                } else if (uuidMatch && match.includes('/expose/')) {
+                  const uuid = uuidMatch[0]
+                  const listingUrl = `${this.rootDomain}/expose/${uuid}`
+                  if (this.isValidListingUrl(listingUrl)) {
+                    listingUrls.add(listingUrl)
+                  }
+                }
+              }
+            } catch (e) {}
+          })
+        }
+      })
+    })
+    
+    // 2. Chercher data-id dans le HTML
+    const dataIdMatches = html.match(/data-id=["']?(\d{4,})["']?/gi)
+    if (dataIdMatches) {
+      dataIdMatches.forEach(match => {
+        const idMatch = match.match(/\d{4,}/)
+        if (idMatch) {
+          const id = idMatch[0]
+          const listingUrl = `${this.rootDomain}/${id}.html`
+          listingUrls.add(listingUrl)
+        }
+      })
+    }
+    
+    // 3. Chercher des liens href avec patterns de listings
+    $('a[href]').each((i, el) => {
+      const href = $(el).attr('href')
+      if (!href) return
+      
+      try {
+        const absoluteUrl = new URL(href, url).href
+        
+        // Patterns de listings
+        const listingPatterns = [
+          /\/\d{4,}\.html$/,
+          /\/listing\/\d+/,
+          /\/expose\/[\w-]+/,
+          /\/anzeige\/\d+/,
+          /\/wohnung\/\d+/,
+          /\/property\/\d+/,
+          /\/immobilie\/\d+/,
+        ]
+        
+        for (const pattern of listingPatterns) {
+          if (pattern.test(absoluteUrl)) {
+            if (this.isValidListingUrl(absoluteUrl)) {
+              listingUrls.add(absoluteUrl)
+            }
+            break
+          }
+        }
+      } catch (e) {}
+    })
+    
+    // 4. Chercher dans les attributs data-*
+    $('[data-listing-id], [data-id], [data-property-id]').each((i, el) => {
+      const listingId = $(el).attr('data-listing-id') || 
+                       $(el).attr('data-id') || 
+                       $(el).attr('data-property-id')
+      
+      if (listingId && listingId.match(/^\d{4,}$/)) {
+        const listingUrl = `${this.rootDomain}/${listingId}.html`
+        listingUrls.add(listingUrl)
+      }
+    })
+    
+    return {
+      listingUrls: Array.from(listingUrls),
+      apiEndpoints
+    }
+  }
+
+  /**
+   * Extract pagination URLs from a listing index page
+   */
+  extractPaginationUrls(html, baseUrl) {
+    const $ = cheerio.load(html)
+    const paginationUrls = new Set()
+    
+    // Patterns pour trouver les liens de pagination
+    const paginationSelectors = [
+      'a[href*="p="]',
+      '.pagination a',
+      '.pager a',
+      '[class*="pagination"] a',
+      '[class*="pager"] a',
+      'a:contains("next")',
+      'a:contains("weiter")',
+      'a:contains("»")',
+      'a:contains(">")'
+    ]
+    
+    paginationSelectors.forEach(selector => {
+      $(selector).each((i, el) => {
+        const href = $(el).attr('href')
+        if (!href) return
+        
+        try {
+          const absoluteUrl = new URL(href, baseUrl).href
+          // Vérifier que c'est bien une URL de pagination (contient page/seite/p)
+          if (absoluteUrl.startsWith(this.rootDomain) && 
+              (absoluteUrl.includes('page=') || 
+               absoluteUrl.includes('seite=') || 
+               absoluteUrl.includes('&p=') ||
+               absoluteUrl.match(/\/\d+$/)) && // URL se termine par un nombre
+              !this.isDisallowed(absoluteUrl)) {
+            paginationUrls.add(absoluteUrl)
+          }
+        } catch (e) {}
+      })
+    })
+    
+    return Array.from(paginationUrls).slice(0, 10) // Limiter à 10 pages max
   }
 
   /**
@@ -594,12 +1081,72 @@ class HttpOnlyCrawler {
     const $ = cheerio.load(html)
     const urls = new Set()
 
-    // Use learned patterns if available
-    const bestPatterns = this.getBestPatterns()
-    const learnedUrlPattern = bestPatterns.listingUrl
+    // PRIORITÉ 1: Utiliser la fonction d'extraction spécifique du site
+    if (this.siteConfig?.extractListingUrls && typeof this.siteConfig.extractListingUrls === 'function') {
+      try {
+        const siteUrls = this.siteConfig.extractListingUrls(html, baseUrl)
+        if (siteUrls && siteUrls.length > 0) {
+          siteUrls.forEach(url => {
+            try {
+              const absoluteUrl = new URL(url, baseUrl).href
+              // ✅ FILTRER: Vérifier que ce n'est pas un blog ou une page d'info
+              if (absoluteUrl.startsWith(this.rootDomain) && 
+                  !this.isDisallowed(absoluteUrl) &&
+                  this.isValidListingUrl(absoluteUrl)) {
+                urls.add(absoluteUrl)
+              }
+            } catch (e) {}
+          })
+          if (urls.size > 0) {
+            return Array.from(urls)
+          }
+        }
+      } catch (error) {
+        console.log(`   ⚠️ Erreur extraction spécifique: ${error.message}`)
+      }
+    }
 
-    // Common selectors for listing links - be more specific
-    const linkSelectors = [
+    // PRIORITÉ 2: Utiliser les patterns spécifiques du site
+    if (this.siteConfig?.listingUrlPatterns) {
+      for (const pattern of this.siteConfig.listingUrlPatterns) {
+        const regex = new RegExp(pattern.source || pattern, pattern.flags || 'gi')
+        const matches = html.match(regex)
+        if (matches && matches.length > 0) {
+          matches.forEach(match => {
+            let href = null
+            const hrefMatch = match.match(/href="([^"]+)"/i)
+            const dataIdMatch = match.match(/data-id="(\d+)"/i)
+            
+            if (hrefMatch) {
+              href = hrefMatch[1]
+            } else if (dataIdMatch && this.provider === 'wg-gesucht') {
+              href = `/${dataIdMatch[1]}.html`
+            } else if (match.match && match[0]) {
+              href = match[0]
+            }
+            
+            if (href) {
+              try {
+                const absoluteUrl = new URL(href, baseUrl).href
+                // ✅ FILTRER: Vérifier que ce n'est pas un blog ou une page d'info
+                if (absoluteUrl.startsWith(this.rootDomain) && 
+                    !this.isDisallowed(absoluteUrl) &&
+                    this.isValidListingUrl(absoluteUrl)) {
+                  urls.add(absoluteUrl)
+                }
+              } catch (e) {}
+            }
+          })
+        }
+      }
+      
+      if (urls.size > 0) {
+        return Array.from(urls)
+      }
+    }
+
+    // PRIORITÉ 3: Utiliser les sélecteurs spécifiques du site
+    const linkSelectors = this.siteConfig?.listingContainer?.map(sel => `${sel} a`) || [
       'a[href*="/expose/"]',
       'a[href*="/angebot/"]',
       'a[href*="/wohnung/"]',
@@ -692,6 +1239,7 @@ class HttpOnlyCrawler {
             
             if (absoluteUrl.startsWith(this.rootDomain) && 
                 !this.isDisallowed(absoluteUrl) && 
+                this.isValidListingUrl(absoluteUrl) &&
                 isListingUrl) {
               urls.add(absoluteUrl)
             }
@@ -713,6 +1261,7 @@ class HttpOnlyCrawler {
           if (numericIdMatch && 
               absoluteUrl.startsWith(this.rootDomain) && 
               !this.isDisallowed(absoluteUrl) &&
+              this.isValidListingUrl(absoluteUrl) &&
               !absoluteUrl.includes('?cat=') &&
               !absoluteUrl.includes('wohnraumangebote')) {
             urls.add(absoluteUrl)
@@ -929,6 +1478,68 @@ class HttpOnlyCrawler {
       }
     }
 
+    // Extract title - PRIORITÉ: Vraies annonces ont un bon titre
+    let title = null
+    
+    // PRIORITÉ 1: Utiliser les sélecteurs spécifiques au site
+    const titleSelectors = this.siteConfig?.titleSelectors || [
+      'h1.listing-title',
+      '.listing-title',
+      '[itemprop="name"]',
+      '.property-title',
+      '.expose-title',
+      'h1.title',
+      '.headline',
+      'h1', // H1 en dernier recours, mais on vérifiera qu'il est valide
+      'title'
+    ]
+    
+    for (const selector of titleSelectors) {
+      const titleEl = $(selector).first()
+      if (titleEl.length > 0) {
+        title = titleEl.text().trim()
+        // Nettoyer le titre
+        title = title.replace(/\s+/g, ' ').trim()
+        // Vérifier que c'est un vrai titre (pas trop court, pas trop long, pas générique)
+        if (title.length >= 10 && title.length <= 200 && 
+            !title.match(/^(Home|Startseite|Willkommen|Welcome|Error|404)$/i) &&
+            !title.includes('JavaScript') && !title.includes('Cookie')) {
+          break
+        }
+      }
+    }
+    
+    // PRIORITÉ 2: Si pas de titre trouvé, chercher dans les meta tags
+    if (!title || title.length < 10) {
+      const ogTitle = $('meta[property="og:title"]').attr('content')
+      const metaTitle = $('meta[name="title"]').attr('content')
+      const titleTag = $('title').text()
+      
+      // Essayer og:title en premier (généralement le meilleur)
+      if (ogTitle && ogTitle.length >= 10 && ogTitle.length <= 200) {
+        title = ogTitle.trim().replace(/\s+/g, ' ')
+        // Retirer les suffixes comme " | Immowelt", " - WG-Gesucht", etc.
+        title = title.split('|')[0].split('- WG-Gesucht')[0].split('- Immowelt')[0].split('- ImmobilienScout24')[0].trim()
+      } else if (metaTitle && metaTitle.length >= 10) {
+        title = metaTitle.trim().replace(/\s+/g, ' ')
+      } else if (titleTag && titleTag.length >= 10) {
+        title = titleTag.trim().replace(/\s+/g, ' ')
+        // Retirer les suffixes
+        title = title.split('|')[0].split('-')[0].trim()
+      }
+    }
+    
+    // PRIORITÉ 3: Si toujours pas de titre, chercher dans le premier H1 ou H2
+    if (!title || title.length < 10) {
+      const h1 = $('h1').first().text().trim()
+      const h2 = $('h2').first().text().trim()
+      if (h1.length >= 10 && h1.length <= 200) {
+        title = h1
+      } else if (h2.length >= 10 && h2.length <= 200) {
+        title = h2
+      }
+    }
+
     // Extract type
     const type = this.extractType(text)
 
@@ -1004,10 +1615,11 @@ class HttpOnlyCrawler {
     // Note: We'll fetch the FULL description separately in fetchDetailedDescription
     // This is just a basic extract for initial validation
 
-    // Extract images - IMPROVED to get more images
+    // Extract images - PRIORITÉ: Config spécifique > Fallback générique
     const pictures = []
-    // Try multiple image selectors
-    const imageSelectors = [
+    
+    // PRIORITÉ 1: Utiliser les sélecteurs spécifiques du site
+    const imageSelectors = this.siteConfig?.imageSelectors || [
       'img[src*="wg-gesucht"]',
       'img[data-src]',
       '.gallery img',
@@ -1167,10 +1779,47 @@ class HttpOnlyCrawler {
       data.location || ''
     )
 
-    // Extract title from location or description
-    const title = data.location || 
-                  (data.description ? data.description.substring(0, 100) : 'Listing') ||
-                  'No title'
+    // Extract title - utiliser le titre extrait (priorité)
+    let title = data.title || 'No title'
+    
+    // Nettoyer le titre - retirer les suffixes de site
+    if (title && title.length > 0) {
+      title = title.split('|')[0].split('- WG-Gesucht')[0].split('- Immowelt')[0].split('- ImmobilienScout24')[0].trim()
+    }
+    
+    // Si le titre est trop court, générique, ou ressemble à du contenu (commence par "Sind Sie", "Hier finden", etc.)
+    const genericPatterns = [
+      /^Sind Sie/i,
+      /^Hier finden/i,
+      /^Willkommen/i,
+      /^Welcome/i,
+      /^Home$/i,
+      /^Startseite$/i,
+      /^Listing$/i,
+      /^No title$/i
+    ]
+    
+    const isGeneric = genericPatterns.some(p => p.test(title))
+    
+    if (!title || title.length < 10 || isGeneric) {
+      // Construire un titre basé sur les données disponibles
+      const parts = []
+      if (data.location) parts.push(data.location)
+      if (data.surface) parts.push(`${data.surface}m²`)
+      if (data.rooms) parts.push(`${data.rooms} Zimmer`)
+      if (data.price) parts.push(`${data.price}€`)
+      if (parts.length > 0) {
+        title = parts.join(' - ')
+      } else if (data.description) {
+        // Prendre les premiers mots significatifs de la description
+        const descWords = data.description.split(/[.!?]/)[0].trim()
+        if (descWords.length >= 10 && descWords.length <= 150) {
+          title = descWords
+        } else {
+          title = data.description.substring(0, 80).trim()
+        }
+      }
+    }
 
     // Parse available_from date
     let availableFrom = new Date()
@@ -1401,7 +2050,7 @@ class HttpOnlyCrawler {
   }
 
   /**
-   * Process a single listing URL - with learning
+   * Process a single listing URL - with learning and validation
    */
   async processListingUrl(listingUrl) {
     if (this.visitedUrls.has(listingUrl)) return null
@@ -1411,6 +2060,15 @@ class HttpOnlyCrawler {
 
     const response = await this.fetch(listingUrl)
     if (!response || response.statusCode !== 200) {
+      this.stats.failedExtractions++
+      return null
+    }
+
+    // ✅ PHASE DE VÉRIFICATION: Est-ce une vraie page de listing?
+    // Note: Validation moins stricte - on vérifiera les données extraites après
+    const isDefinitelyNotListing = this.isDefinitelyNotListing(response.bodyText, listingUrl)
+    if (isDefinitelyNotListing) {
+      console.log(`   ⚠️ Page ignorée (pas une vraie listing): ${listingUrl.substring(0, 60)}...`)
       this.stats.failedExtractions++
       return null
     }
@@ -1431,66 +2089,202 @@ class HttpOnlyCrawler {
       return null
     }
 
+    // Use ONLY OpenAI for extraction - no fallbacks, no keywords
     let listingData = null
-
-    // Try JSON-LD first
-    if (response.jsonLd) {
-      listingData = this.extractFromJsonLd(response.jsonLd)
+    
+    if (response.bodyText) {
+      const openAIExtractor = await loadOpenAIExtractor()
+        if (openAIExtractor) {
+          console.log(`   🤖 Using OpenAI to extract ALL information from HTML...`)
+          listingData = await openAIExtractor(response.bodyText, listingUrl)
+          
+          // Check if GPT determined this is not a valid listing
+          if (listingData && listingData.isValidListing === false) {
+            console.log(`   ❌ GPT determined this is not a valid rental listing - skipping`)
+            this.stats.failedExtractions++
+            return null
+          }
+          
+          if (listingData && listingData.price) {
+            console.log(`   ✅ OpenAI extraction successful`)
+          } else {
+            console.log(`   ❌ OpenAI extraction failed - skipping this listing`)
+            this.stats.failedExtractions++
+            return null
+          }
+        } else {
+          console.log(`   ❌ OpenAI not configured - skipping this listing`)
+          this.stats.failedExtractions++
+          return null
+        }
+    } else {
+      console.log(`   ❌ No HTML content - skipping this listing`)
+      this.stats.failedExtractions++
+      return null
     }
 
-    // Fallback to HTML parsing
-    if (!listingData || !listingData.price) {
-      listingData = this.extractFromHtml(response.bodyText, listingUrl)
+    // Validate extraction quality - on sauvegarde seulement les vraies annonces
+    if (!listingData || !listingData.price || listingData.price < 50 || listingData.price > 50000) {
+      console.log(`   ⚠️ Données invalides: prix manquant ou invalide (${listingData?.price || 'N/A'})`)
+      this.stats.failedExtractions++
+      return null
     }
-
-    // Validate extraction quality
-    const isValid = listingData && (
-      listingData.price || 
-      listingData.surface || 
-      listingData.rooms ||
-      listingData.description
-    )
-
-    if (isValid) {
-      const normalized = this.normalizeListing(listingData, listingUrl)
-      
-      // Fetch detailed description ALWAYS (even if we have a basic one)
-      console.log(`   📝 Fetching FULL detailed description for ${listingUrl}`)
-      const detailedDescription = await this.fetchDetailedDescription(listingUrl)
-      
-      // Always use the detailed description if available
-      if (detailedDescription && detailedDescription.length > 50) {
-        normalized.description = detailedDescription
+    
+    // Normaliser les données selon le schéma MongoDB
+    const normalized = this.normalizeListing(listingData, listingUrl)
+    
+    // VALIDATION: Ensure this is a real rental listing
+    if (!normalized.price || normalized.price <= 0) {
+      console.log(`   ❌ No valid price found - skipping this listing`)
+      this.stats.failedExtractions++
+      return null
+    }
+    
+    // VALIDATION: Let GPT decide if it's a valid rental listing
+    // We trust GPT's intelligence to determine if this is a real rental listing
+    // No more limited keyword-based validation
+    
+    // Si pas de coordonnées mais qu'on a une adresse, utiliser géocodage approximatif selon quartier
+    if (!normalized.lat || !normalized.lng) {
+      const districtLower2 = (normalized.district || '').toLowerCase()
+      const coordsMap = {
+        'mitte': { lat: 52.5200, lng: 13.4050 },
+        'friedrichshain': { lat: 52.5145, lng: 13.4531 },
+        'kreuzberg': { lat: 52.4991, lng: 13.4031 },
+        'charlottenburg': { lat: 52.5170, lng: 13.2999 },
+        'neukölln': { lat: 52.4823, lng: 13.4342 },
+        'prenzlauer berg': { lat: 52.5438, lng: 13.4071 },
+        'wedding': { lat: 52.5439, lng: 13.3541 },
+        'moabit': { lat: 52.5269, lng: 13.3453 },
+        'schöneberg': { lat: 52.4889, lng: 13.3553 }
       }
       
-      // Ensure description fits MongoDB schema (maxlength: 2000)
-      if (normalized.description && normalized.description.length > 2000) {
-        // Truncate to MongoDB maxlength but keep full description
-        normalized.description = normalized.description.substring(0, 2000)
-        console.log(`   ✅ Full description extracted and saved (truncated to 2000 chars for MongoDB)`)
-      } else if (normalized.description) {
-        console.log(`   ✅ Full description extracted (${normalized.description.length} chars)`)
-      }
-      
-      this.results.push(normalized)
-      
-      // Save to MongoDB
-      if (this.saveToMongo && this.mongoCollection) {
-        const saveResult = await this.saveListingToMongo(normalized)
-        if (saveResult) {
-          process.stdout.write(` [${saveResult === 'inserted' ? '✓' : '↑'}]`)
+      for (const [district, coords] of Object.entries(coordsMap)) {
+        if (districtLower2.includes(district)) {
+          normalized.lat = coords.lat
+          normalized.lng = coords.lng
+          console.log(`   📍 Coordonnées approximatives ajoutées pour ${district}`)
+          break
         }
       }
       
-      // Learn from successful extraction
-      this.learnFromSuccess(response.bodyText, listingData, listingUrl)
-      
-      return normalized
-    } else {
-      this.stats.failedExtractions++
+      // Fallback au centre de Berlin
+      if (!normalized.lat || !normalized.lng) {
+        normalized.lat = 52.5200
+        normalized.lng = 13.4050
+        console.log(`   📍 Coordonnées par défaut: centre de Berlin`)
+      }
     }
-
-    return null
+    
+    // Validation finale des champs requis MongoDB - on sauvegarde les vraies annonces
+    if (!normalized.title || normalized.title.length < 5) {
+      console.log(`   ⚠️ Titre invalide ou trop court: "${normalized.title}"`)
+      this.stats.failedExtractions++
+      return null
+    }
+    
+    // Description: minimum 20 caractères OU si on a prix+location valides on accepte
+    const hasBasicInfo = normalized.price && normalized.price > 0 && normalized.location && normalized.location.length > 1
+    if (!normalized.description || (normalized.description.length < 20 && !hasBasicInfo)) {
+      console.log(`   ⚠️ Description invalide ou trop courte (${normalized.description?.length || 0} chars)`)
+      this.stats.failedExtractions++
+      return null
+    }
+    
+    if (!normalized.location || normalized.location.length < 1) {
+      console.log(`   ⚠️ Localisation manquante`)
+      this.stats.failedExtractions++
+      return null
+    }
+    
+    // Surface: optionnelle pour les WG/chambres, mais si présente doit être valide
+    if (normalized.surface && normalized.surface > 0 && (normalized.surface < 5 || normalized.surface > 1000)) {
+      console.log(`   ⚠️ Surface invalide: ${normalized.surface}m²`)
+      // Pour les WG, on peut accepter de petites surfaces, alors on continue si c'est une chambre
+      if (normalized.type !== 'WG' || normalized.surface < 3) {
+        this.stats.failedExtractions++
+        return null
+      }
+    }
+    
+    // Nettoyer le titre - retirer les textes de pub et garder seulement le vrai titre
+    if (normalized.title) {
+      // Retirer les patterns de pub communs
+      normalized.title = normalized.title
+        .replace(/URBANELITE\.COM\s*\/\/.*?\/\//gi, '')
+        .replace(/Keine Kaution.*?\/\//gi, '')
+        .replace(/\/\/.*?\/\//g, '')
+        .replace(/^[^a-zA-Z0-9äöüÄÖÜ]*/g, '')
+        .trim()
+      
+      // Si titre toujours invalide ou générique, générer un nouveau
+      if (!normalized.title || normalized.title.length < 5 || normalized.title.match(/^(Home|Startseite|Welcome|Listing|No title|Sind Sie|URBANELITE)/i)) {
+        const parts = []
+        if (normalized.location && !normalized.location.includes('URBANELITE')) parts.push(normalized.location.split(',')[1]?.trim() || normalized.location)
+        if (normalized.surface) parts.push(`${normalized.surface}m²`)
+        if (normalized.rooms) parts.push(`${normalized.rooms} Zimmer`)
+        if (normalized.type) parts.push(normalized.type === 'WG' ? 'Zimmer' : normalized.type)
+        if (normalized.price) parts.push(`${normalized.price}€`)
+        
+        if (parts.length > 0) {
+          normalized.title = parts.join(' - ')
+        } else if (normalized.description) {
+          normalized.title = normalized.description.substring(0, 80).split('.')[0].trim()
+        }
+        console.log(`   📝 Titre nettoyé/généré: ${normalized.title.substring(0, 60)}...`)
+      }
+    }
+    
+    // Nettoyer location aussi
+    if (normalized.location) {
+      normalized.location = normalized.location
+        .replace(/URBANELITE\.COM.*?\/\//gi, '')
+        .replace(/\/\/.*?\/\//g, '')
+        .trim()
+      
+      // S'assurer que location contient Berlin
+      if (normalized.location && !normalized.location.toLowerCase().includes('berlin')) {
+        normalized.location = `Berlin, ${normalized.location}`
+      }
+    }
+    
+    // Fetch detailed description si on a une description basique
+    if (!normalized.description || normalized.description.length < 100) {
+      console.log(`   📝 Fetching FULL detailed description...`)
+      const detailedDescription = await this.fetchDetailedDescription(listingUrl)
+      if (detailedDescription && detailedDescription.length > 50) {
+        normalized.description = detailedDescription
+      }
+    }
+    
+    // Ensure description fits MongoDB schema (maxlength: 2000)
+    if (normalized.description && normalized.description.length > 2000) {
+      normalized.description = normalized.description.substring(0, 2000)
+    }
+    
+    this.results.push(normalized)
+    
+    // Save to MongoDB - TOUJOURS sauvegarder si validation passée
+    if (this.saveToMongo && this.mongoCollection) {
+      try {
+        const saveResult = await this.saveListingToMongo(normalized)
+        if (saveResult) {
+          console.log(`   ✅ Sauvegardé dans MongoDB [${saveResult === 'inserted' ? '✓ Nouveau' : '↑ Existant'}] - ${normalized.title.substring(0, 50)}`)
+          this.stats.savedToMongo = (this.stats.savedToMongo || 0) + 1
+        } else {
+          console.log(`   ⚠️ Échec sauvegarde MongoDB - voir erreurs ci-dessus`)
+        }
+      } catch (error) {
+        console.error(`   ❌ Erreur sauvegarde MongoDB: ${error.message}`)
+      }
+    } else if (!this.mongoCollection) {
+      console.log(`   ⚠️ MongoDB non connecté - listing non sauvegardé`)
+    }
+    
+    // Learn from successful extraction
+    this.learnFromSuccess(response.bodyText, listingData, listingUrl)
+    
+    return normalized
   }
 
   /**
@@ -1566,8 +2360,50 @@ class HttpOnlyCrawler {
     // Check if this is a listing search page
     if (this.isListingSearchPage(this.rootUrl)) {
       console.log(`\n✅ Detected listing search page - using optimized extraction`)
-      const listingUrls = await this.startFromSearchPage(this.rootUrl)
-      this.listingUrls = new Set(listingUrls)
+      // Utiliser la recherche approfondie pour trouver les vraies URLs de listings
+      const response = await this.fetch(this.rootUrl)
+      if (response && response.statusCode === 200) {
+        // RECHERCHE APPROFONDIE: chercher dans les scripts, data-*, etc.
+        const deepAnalysis = this.deepSearchForListings(response.bodyText, this.rootUrl)
+        
+        if (deepAnalysis.listingUrls.length > 0) {
+          console.log(`✅ Found ${deepAnalysis.listingUrls.length} listing URLs via deep search`)
+          this.listingUrls = new Set(deepAnalysis.listingUrls)
+        } else {
+          // Fallback à l'analyse standard si recherche approfondie ne trouve rien
+          const analysis = this.isListingIndexPageAdvanced(response.bodyText, this.rootUrl)
+          
+          if (analysis.isListingIndex && analysis.listingUrls.length > 0) {
+            console.log(`✅ Found ${analysis.listingUrls.length} listing links via standard analysis`)
+            this.listingUrls = new Set(analysis.listingUrls)
+          }
+        }
+        
+        if (this.listingUrls.size > 0) {
+          // Chercher la pagination
+          console.log(`\n📄 Checking for pagination...`)
+          const paginationUrls = this.extractPaginationUrls(response.bodyText, this.rootUrl)
+          if (paginationUrls.length > 0) {
+            console.log(`   📋 Found ${paginationUrls.length} additional pages`)
+            for (const paginationUrl of paginationUrls.slice(0, 5)) {
+              const pagResponse = await this.fetch(paginationUrl)
+              if (pagResponse && pagResponse.statusCode === 200) {
+                const pagAnalysis = this.isListingIndexPageAdvanced(pagResponse.bodyText, paginationUrl)
+                if (pagAnalysis.isListingIndex && pagAnalysis.listingUrls.length > 0) {
+                  pagAnalysis.listingUrls.forEach(url => this.listingUrls.add(url))
+                  console.log(`   ✅ Added ${pagAnalysis.listingUrls.length} listings from page ${paginationUrls.indexOf(paginationUrl) + 2}`)
+                }
+              }
+              await this.delay(500)
+            }
+          }
+        } else {
+          // Fallback à startFromSearchPage si l'analyse avancée ne trouve rien
+          console.log(`⚠️  Advanced analysis found ${analysis.listingLinkCount} links, trying fallback...`)
+          const listingUrls = await this.startFromSearchPage(this.rootUrl)
+          this.listingUrls = new Set(listingUrls)
+        }
+      }
     } else {
       // Step 1: Check robots.txt
       console.log('\n📋 Step 1: Checking robots.txt...')
@@ -1585,16 +2421,32 @@ class HttpOnlyCrawler {
         const candidateUrls = await this.findListingPagesFromHomepage()
         console.log(`✅ Found ${candidateUrls.length} candidate URLs`)
 
-        // Step 4: Identify listings index pages
-        console.log('\n📊 Step 4: Identifying listings index pages...')
-        for (const url of candidateUrls.slice(0, 5)) { // Check first 5
-          if (await this.isListingsIndex(url)) {
+      // Step 4: Identify listings index pages
+      console.log('\n📊 Step 4: Identifying listings index pages...')
+      
+      // PRIORITÉ: Utiliser les conteneurs spécifiques du site pour détecter les index
+      const listingSelectors = this.siteConfig?.listingContainer || [
+        'article',
+        '[data-listing-id]',
+        '[data-id]',
+        '.listing',
+        '.result-item',
+        '.property-item',
+        '.offer-item',
+        '.ad-item'
+      ]
+      
+      for (const url of candidateUrls.slice(0, 5)) { // Check first 5
+        const response = await this.fetch(url)
+        if (response && response.statusCode === 200) {
+          const analysis = this.isListingIndexPageAdvanced(response.bodyText, url)
+          if (analysis.isListingIndex && analysis.listingUrls.length > 0) {
             console.log(`✅ Found listings index: ${url}`)
-            const listingUrls = await this.followPagination(url)
-            listingUrls.forEach(u => this.listingUrls.add(u))
+            analysis.listingUrls.forEach(u => this.listingUrls.add(u))
             break // Use first valid index
           }
         }
+      }
 
         // If no index found, try to extract listings from candidate URLs
         if (this.listingUrls.size === 0) {
@@ -1628,10 +2480,11 @@ class HttpOnlyCrawler {
 
     // Step 5: Process each listing URL
     console.log('\n🔄 Step 5: Processing listing URLs...')
+    const maxListings = this.options?.maxListings || 50 // Allow configurable limit
     let processed = 0
-    for (const url of Array.from(this.listingUrls).slice(0, 50)) { // Limit to 50 for testing
+    for (const url of Array.from(this.listingUrls).slice(0, maxListings)) {
       processed++
-      process.stdout.write(`\r   Processing ${processed}/${Math.min(this.listingUrls.size, 50)}...`)
+      process.stdout.write(`\r   Processing ${processed}/${Math.min(this.listingUrls.size, maxListings)}...`)
       
       const listing = await this.processListingUrl(url)
       if (listing) {
@@ -1692,12 +2545,14 @@ class HttpOnlyCrawler {
   }
 }
 
-// CLI usage - check if this script is being run directly
-const isRunningDirectly = process.argv[1] && 
-  (process.argv[1].includes('http-only-crawler') || 
-   import.meta.url.includes('http-only-crawler'))
+// Export for use as module
+export default HttpOnlyCrawler
+export { HttpOnlyCrawler }
 
-if (isRunningDirectly) {
+// CLI usage - check if this script is being run directly (not imported)
+if (typeof process !== 'undefined' && process.argv[1] && 
+    process.argv[1].endsWith('http-only-crawler.js') &&
+    !process.argv[1].includes('multi-site-crawler')) {
   const rootUrl = process.argv[2]
   if (!rootUrl) {
     console.error('Usage: node http-only-crawler.js <root-url>')
@@ -1725,6 +2580,4 @@ if (isRunningDirectly) {
       process.exit(1)
     })
 }
-
-export { HttpOnlyCrawler }
 

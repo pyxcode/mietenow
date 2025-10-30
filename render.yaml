@@ -20,52 +20,57 @@ services:
           name: mietenow-web
           property: host
 
-  # 🔄 Cron Job - Scraping toutes les 5 minutes
+  # 🔄 Cron Job - Multi-Site Scraping (all 20 sites)
   - type: cron
-    name: mietenow-scraper
+    name: mietenow-multi-site-scraper
     env: node
     region: frankfurt
     plan: starter
-    schedule: "*/5 * * * *"  # Toutes les 5 minutes
+    schedule: "*/30 * * * *"  # Toutes les 30 minutes
     buildCommand: npm install
-    startCommand: node scripts/cron-scraping-standalone.js
+    startCommand: node scripts/cron-multi-site-scraping.js
     envVars:
       - key: MONGODB_URI
         sync: false
-      - key: BROWSERLESS_TOKEN
+      - key: MONGODB_URI2
         sync: false
 
-  # 📧 Cron Job - Envoi des alertes
-  - type: cron
-    name: mietenow-alerts
-    env: node
-    region: frankfurt
-    plan: starter
-    schedule: "5 * * * *"  # Toutes les heures + 5 minutes
-    buildCommand: npm install
-    startCommand: node scripts/cron-send-alerts.js
-    envVars:
-      - key: MONGODB_URI
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
+# 🔄 Cron Job - Optimized Scraping Every 5 Minutes
+- type: cron
+  name: mietenow-optimized-scraping
+  env: node
+  region: frankfurt
+  plan: starter
+  schedule: "*/5 * * * *"  # Every 5 minutes
+  buildCommand: npm install
+  startCommand: node scripts/optimized-cron.js
+  envVars:
+    - key: MONGODB_URI
+      sync: false
+    - key: MONGODB_URI2
+      sync: false
+    - key: OPENAI_API_KEY
+      sync: false
+    - key: APIKEYSENDGRID
+      sync: false
+    - key: SENDGRID_FROM_EMAIL
+      sync: false
 
-  # 🧹 Cron Job - Nettoyage des anciennes annonces
-  - type: cron
-    name: mietenow-cleanup
-    env: node
-    region: frankfurt
-    plan: starter
-    schedule: "0 2 * * *"  # Tous les jours à 2h du matin
-    buildCommand: npm install
-    startCommand: node scripts/cron-cleanup-standalone.js
-    envVars: []
+# 🧹 Cron Job - Database Cleanup Every Night at 2 AM
+- type: cron
+  name: mietenow-cleanup-database
+  env: node
+  region: frankfurt
+  plan: starter
+  schedule: "0 2 * * *"  # Every day at 2 AM
+  buildCommand: npm install
+  startCommand: node scripts/cleanup-database.js
+  envVars:
+    - key: MONGODB_URI
+      sync: false
+    - key: MONGODB_URI2
+      sync: false
+
 
 
   # 💰 Cron Job - Vérification des plans

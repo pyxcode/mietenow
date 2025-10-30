@@ -2,14 +2,13 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
-import { ChevronLeft, ChevronRight, MapPin, Navigation } from 'lucide-react'
-import Link from 'next/link'
+import { ChevronLeft, ChevronRight, Navigation } from 'lucide-react'
 import SimpleHeader from '@/components/SimpleHeader'
 import { useRouter } from 'next/navigation'
-import { geocodeAddress } from '@/lib/geocoding'
+import AddressPicker from '@/components/AddressPicker'
 
 export default function AddressCriteriaPage() {
   const { language } = useLanguage()
@@ -17,134 +16,62 @@ export default function AddressCriteriaPage() {
   const router = useRouter()
   
   const [address, setAddress] = useState('')
+  const [exactAddress, setExactAddress] = useState('')
   const [radius, setRadius] = useState(5)
-  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedCoordinates, setSelectedCoordinates] = useState<{lat: number, lng: number} | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Charger les préférences existantes
+  // Load existing preferences
   useEffect(() => {
     if (preferences?.address) {
       setAddress(preferences.address)
     }
+    if (preferences?.exact_address) {
+      setExactAddress(preferences.exact_address)
+    }
     if (preferences?.radius) {
       setRadius(preferences.radius)
     }
+    if (preferences?.coordinates) {
+      setSelectedCoordinates(preferences.coordinates)
+    }
   }, [preferences])
 
-  // Fonction pour rechercher des adresses avec OpenStreetMap Nominatim (avec debounce)
-  const searchAddresses = (query: string) => {
-    // Annuler la recherche précédente
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current)
-    }
-
-    if (query.length < 3) {
-      setAddressSuggestions([])
-      setShowSuggestions(false)
-      setIsSearching(false)
-      return
-    }
-
-    setIsSearching(true)
-
-    // Debounce de 500ms
-    searchTimeoutRef.current = setTimeout(async () => {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Berlin, Germany')}&limit=5&addressdetails=1`
-        )
-        const data = await response.json()
-        
-        // Trier les résultats pour mettre les plus pertinents en premier
-        const sortedData = data.sort((a: any, b: any) => {
-          // Prioriser les résultats avec plus de détails d'adresse
-          const aScore = (a.address?.road ? 1 : 0) + (a.address?.suburb ? 1 : 0) + (a.address?.city_district ? 1 : 0)
-          const bScore = (b.address?.road ? 1 : 0) + (b.address?.suburb ? 1 : 0) + (b.address?.city_district ? 1 : 0)
-          return bScore - aScore
-        })
-        
-        setAddressSuggestions(sortedData)
-        setShowSuggestions(true)
-      } catch (error) {
-        console.error('Error searching addresses:', error)
-        setAddressSuggestions([])
-      } finally {
-        setIsSearching(false)
-      }
-    }, 500)
-  }
-
-  // Fonction pour sélectionner une adresse
-  const selectAddress = (suggestion: any) => {
-    setAddress(suggestion.display_name)
-    setSelectedCoordinates({
-      lat: parseFloat(suggestion.lat),
-      lng: parseFloat(suggestion.lon)
-    })
-    // Garder les suggestions visibles un peu plus longtemps
-    setTimeout(() => {
-      setShowSuggestions(false)
-    }, 200)
+  // Handle address selection from AddressPicker
+  const handleAddressSelect = ({ address: selectedAddress, coordinates }: { address: string; coordinates: { lat: number; lng: number } }) => {
+    setAddress(selectedAddress)
+    setExactAddress(selectedAddress)
+    setSelectedCoordinates(coordinates)
   }
 
   const handleContinue = async () => {
     try {
-      console.log('🔍 Debug - Adresse saisie:', address)
-      console.log('🔍 Debug - Adresse trim:', address.trim())
-      console.log('🔍 Debug - Coordonnées sélectionnées:', selectedCoordinates)
-      
-      let coordinates = selectedCoordinates
-      
-      // Si pas de coordonnées sélectionnées mais une adresse saisie, géocoder automatiquement
-      if (!coordinates && address.trim()) {
-        console.log('Géocodage automatique de l\'adresse:', address)
-        
-        try {
-          const geocodingResult = await geocodeAddress(address, { city: 'Berlin', country: 'Germany' })
-          
-          if (geocodingResult) {
-            coordinates = {
-              lat: geocodingResult.lat,
-              lng: geocodingResult.lng
-            }
-            console.log('Coordonnées obtenues:', coordinates)
-          } else {
-            console.warn('Impossible de géocoder l\'adresse:', address)
-          }
-        } catch (geocodingError) {
-          console.error('Erreur lors du géocodage:', geocodingError)
-        }
-      }
-      
-      // Sauvegarder les préférences avec les coordonnées
-      console.log('💾 Sauvegarde des préférences:', {
+      console.log('💾 Saving address preferences:', {
         address,
+        exact_address: exactAddress,
         radius,
-        coordinates: coordinates || undefined
+        coordinates: selectedCoordinates
       })
       
       const saveResult = await savePreferences('address', {
         address,
+        exact_address: exactAddress,
         radius,
-        coordinates: coordinates || undefined
+        coordinates: selectedCoordinates || undefined
       })
       
-      console.log('✅ Résultat de la sauvegarde:', saveResult)
+      console.log('✅ Address preferences saved:', saveResult)
       
-      // Rediriger vers la page de signup
+      // Redirect to signup page
       router.push('/signup')
     } catch (error) {
-      console.error('Error saving preferences:', error)
-      // Rediriger quand même vers signup
+      console.error('Error saving address preferences:', error)
+      // Redirect anyway
       router.push('/signup')
     }
   }
 
   const handleBack = () => {
-    router.push('/criteria')
+    router.push('/criteria/price')
   }
 
   return (
@@ -205,67 +132,12 @@ export default function AddressCriteriaPage() {
 
           {/* Address Input */}
           <div className="mb-8">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <MapPin className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => {
-                  setAddress(e.target.value)
-                  searchAddresses(e.target.value)
-                }}
-                onFocus={() => {
-                  if (addressSuggestions.length > 0) {
-                    setShowSuggestions(true)
-                  }
-                }}
-                onBlur={() => {
-                  // Délai avant de cacher les suggestions pour permettre le clic
-                  setTimeout(() => {
-                    setShowSuggestions(false)
-                  }, 300)
-                }}
-                placeholder={language === 'de' ? 'Adresse eingeben...' : 'Enter address...'}
-                className="w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-2xl text-white placeholder-gray-400 focus:border-[#00BFA6] focus:outline-none transition-all duration-300"
-              />
-            </div>
-            
-            {/* Address Suggestions */}
-            {(showSuggestions || isSearching) && (
-              <div className="mt-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden">
-                {isSearching ? (
-                  <div className="px-4 py-3 text-white text-center">
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span className="text-sm">{language === 'de' ? 'Suche...' : 'Searching...'}</span>
-                    </div>
-                  </div>
-                ) : addressSuggestions.length > 0 ? (
-                  addressSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => selectAddress(suggestion)}
-                      className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors border-b border-white/10 last:border-b-0"
-                    >
-                      <div className="font-medium text-sm">{suggestion.display_name}</div>
-                      {suggestion.address && (
-                        <div className="text-xs text-gray-300 mt-1">
-                          {suggestion.address.road && `${suggestion.address.road}, `}
-                          {suggestion.address.suburb && `${suggestion.address.suburb}, `}
-                          {suggestion.address.city_district && `${suggestion.address.city_district}`}
-                        </div>
-                      )}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-3 text-gray-300 text-center text-sm">
-                    {language === 'de' ? 'Keine Ergebnisse gefunden' : 'No results found'}
-                  </div>
-                )}
-              </div>
-            )}
+            <AddressPicker
+              onAddressSelect={handleAddressSelect}
+              initialAddress={address}
+              initialCoordinates={selectedCoordinates || undefined}
+              placeholder={language === 'de' ? 'Adresse eingeben...' : 'Enter address...'}
+            />
           </div>
 
           {/* Radius Slider */}

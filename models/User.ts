@@ -21,6 +21,7 @@ export interface IUser extends Document {
     districts?: string[]
     furnishing?: 'Any' | 'Furnished' | 'Unfurnished'
     address?: string
+    exact_address?: string
     radius?: number
     coordinates?: {lat: number, lng: number}
     min_bedrooms?: number
@@ -117,6 +118,10 @@ const UserSchema = new Schema<IUser>({
       default: 'Any'
     },
     address: {
+      type: String,
+      trim: true
+    },
+    exact_address: {
       type: String,
       trim: true
     },

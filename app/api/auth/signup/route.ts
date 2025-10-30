@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
       first_name: firstName,
       last_name: lastName,
       email: email.toLowerCase(),
-      password: hashedPassword,
+      password_hash: hashedPassword, // Use password_hash instead of password
       plan: 'empty',
-      subscription_status: 'inactive',
+      subscription_status: 'active', // Set to active instead of inactive
       search_preferences: {
         city: city || 'Berlin',
         min_price: minPrice ? parseInt(minPrice) : undefined,

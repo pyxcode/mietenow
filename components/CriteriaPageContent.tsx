@@ -49,9 +49,9 @@ export default function CriteriaPage() {
         setCurrentStep(prev => prev + 1)
       }, 300)
     } else {
-      // Last step - go to address page
+      // Last step - go to price page
       setTimeout(() => {
-        window.location.href = '/criteria/address'
+        window.location.href = '/criteria/price'
       }, 300)
     }
   }
