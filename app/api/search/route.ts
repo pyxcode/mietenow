@@ -11,7 +11,7 @@ function buildMongoFilter(criteria: any) {
   
   // Filtre par ville - SIMPLIFIÉ: Pour Berlin, on ne filtre PAS par ville
   // Car la plupart des listings sont à Berlin et ont des localisations mal formatées
-  if (criteria.city && criteria.city.toLowerCase() !== 'berlin') {
+  if (criteria.city && typeof criteria.city === 'string' && criteria.city.toLowerCase() !== 'berlin') {
     // Pour les autres villes, utiliser le filtre strict
     filter.$or = [
       { location: { $regex: criteria.city, $options: 'i' } },
@@ -56,13 +56,14 @@ function buildMongoFilter(criteria: any) {
   
   // Filtre par type - mapper les types frontend vers les types MongoDB
   if (criteria.type && criteria.type !== 'Any') {
-    const typeMapping = {
-      'room': 'WG',
-      'studio': 'studio', 
-      'apartment': 'apartment',
-      'house': 'house'
+    const typeMapping: Record<string, string> = {
+      room: 'WG',
+      studio: 'studio',
+      apartment: 'apartment',
+      house: 'house'
     }
-    const mongoType = typeMapping[criteria.type.toLowerCase()] || criteria.type
+    const typeKey = typeof criteria.type === 'string' ? criteria.type.toLowerCase() : ''
+    const mongoType = (typeKey && typeMapping[typeKey]) ? typeMapping[typeKey] : criteria.type
     filter.type = mongoType
   }
   
