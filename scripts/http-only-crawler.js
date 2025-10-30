@@ -18,11 +18,13 @@ import { MongoClient } from 'mongodb'
 import { getSiteConfig } from './site-configs.js'
 // Dynamic import for OpenAI to avoid errors if not configured
 let extractListingWithOpenAI = null
+let validateListingIndexPage = null
 async function loadOpenAIExtractor() {
   if (!extractListingWithOpenAI && process.env.OPENAI_API_KEY) {
     try {
       const module = await import('../lib/openai-extractor.js')
       extractListingWithOpenAI = module.extractListingWithOpenAI
+      validateListingIndexPage = module.validateListingIndexPage
     } catch (e) {
       console.log('⚠️ OpenAI module not available:', e.message)
     }
@@ -2371,6 +2373,110 @@ class HttpOnlyCrawler {
   }
 
   /**
+   * Find and validate the correct URL for listing search page
+   * If current URL is not valid, searches for correct path on the page
+   */
+  async findCorrectListingUrl(startUrl) {
+    console.log(`\n🔍 Validating listing search URL...`)
+    
+    // Load OpenAI validator
+    await loadOpenAIExtractor()
+    
+    // First, validate the starting URL
+    const initialResponse = await this.fetch(startUrl)
+    if (initialResponse && initialResponse.statusCode === 200) {
+      if (validateListingIndexPage) {
+        const validation = await validateListingIndexPage(initialResponse.bodyText, startUrl)
+        if (validation.isValidPage && validation.listingCount > 0) {
+          console.log(`✅ Starting URL is valid (${validation.listingCount} listings detected)`)
+          return startUrl
+        } else {
+          console.log(`⚠️ Starting URL is not valid: ${validation.reason}`)
+          console.log(`🔍 Searching for correct URL on the page...`)
+        }
+      } else {
+        // No OpenAI, use basic heuristics
+        const analysis = this.isListingIndexPageAdvanced(initialResponse.bodyText, startUrl)
+        if (analysis.isListingIndex && analysis.listingUrls.length > 5) {
+          console.log(`✅ Starting URL appears valid (${analysis.listingUrls.length} listings found)`)
+          return startUrl
+        }
+      }
+    }
+    
+    // If URL is not valid, search for correct links on the page
+    if (initialResponse && initialResponse.statusCode === 200) {
+      const $ = cheerio.load(initialResponse.bodyText)
+      const candidateUrls = new Set()
+      
+      // Find links that might lead to listing pages
+      $('a[href]').each((i, el) => {
+        const href = $(el).attr('href')
+        if (!href) return
+        
+        try {
+          const absoluteUrl = new URL(href, startUrl).href
+          const urlLower = absoluteUrl.toLowerCase()
+          const textLower = $(el).text().toLowerCase()
+          
+          // Keywords that suggest rental listing pages
+          const rentalKeywords = [
+            'wohnung-mieten', 'wohnung-mieten', 'mietwohnungen',
+            'rent', 'rental', 'immobilien', 'immobilie'
+          ]
+          
+          // Check if link text or URL contains rental keywords
+          const hasRentalKeyword = rentalKeywords.some(kw => 
+            urlLower.includes(kw) || textLower.includes(kw)
+          )
+          
+          // For Kleinanzeigen specifically, look for /s-wohnung-mieten/ pattern
+          if (this.provider === 'kleinanzeigen') {
+            if (urlLower.includes('/s-wohnung-mieten/') && urlLower.includes('berlin')) {
+              candidateUrls.add(absoluteUrl)
+            }
+          } else if (hasRentalKeyword && urlLower.includes('berlin')) {
+            candidateUrls.add(absoluteUrl)
+          }
+        } catch (e) {
+          // Invalid URL, skip
+        }
+      })
+      
+      console.log(`   Found ${candidateUrls.size} candidate URLs, testing...`)
+      
+      // Test each candidate URL (limit to first 10 for performance)
+      const candidates = Array.from(candidateUrls).slice(0, 10)
+      for (const candidateUrl of candidates) {
+        console.log(`   Testing: ${candidateUrl}`)
+        const testResponse = await this.fetch(candidateUrl)
+        if (testResponse && testResponse.statusCode === 200) {
+          if (validateListingIndexPage) {
+            const validation = await validateListingIndexPage(testResponse.bodyText, candidateUrl)
+            if (validation.isValidPage && validation.listingCount > 0) {
+              console.log(`✅ Found valid URL: ${candidateUrl} (${validation.listingCount} listings)`)
+              await this.delay(500) // Rate limiting
+              return candidateUrl
+            }
+          } else {
+            // Basic heuristic check
+            const analysis = this.isListingIndexPageAdvanced(testResponse.bodyText, candidateUrl)
+            if (analysis.isListingIndex && analysis.listingUrls.length > 5) {
+              console.log(`✅ Found valid URL: ${candidateUrl} (${analysis.listingUrls.length} listings)`)
+              await this.delay(500)
+              return candidateUrl
+            }
+          }
+        }
+        await this.delay(500) // Rate limiting between tests
+      }
+    }
+    
+    console.log(`⚠️ Could not find a valid listing URL, using original: ${startUrl}`)
+    return startUrl
+  }
+
+  /**
    * Main crawling process
    */
   async crawl() {
@@ -2380,6 +2486,15 @@ class HttpOnlyCrawler {
     // Connect to MongoDB
     if (this.saveToMongo) {
       await this.connectMongo()
+    }
+
+    // Find and validate the correct URL (especially for Kleinanzeigen)
+    if (this.provider === 'kleinanzeigen' || this.rootUrl.includes('kleinanzeigen')) {
+      const correctUrl = await this.findCorrectListingUrl(this.rootUrl)
+      if (correctUrl !== this.rootUrl) {
+        console.log(`🔄 Updating root URL from ${this.rootUrl} to ${correctUrl}`)
+        this.rootUrl = correctUrl
+      }
     }
 
     // Check if this is a listing search page

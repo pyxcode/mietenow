@@ -47,8 +47,13 @@ async function getNewListingsSince(sinceDate) {
     const db = client.db(DB_NAME)
     const listingsCollection = db.collection(COLLECTION_NAME)
     
+    // Check both createdAt and scraped_at fields
     const newListings = await listingsCollection.find({
-      createdAt: { $gte: sinceDate }
+      $or: [
+        { createdAt: { $gte: sinceDate } },
+        { scraped_at: { $gte: sinceDate } },
+        { created_at: { $gte: sinceDate } }
+      ]
     }).toArray()
     
     console.log(`📊 Found ${newListings.length} new listings since ${sinceDate.toISOString()}`)
@@ -85,15 +90,24 @@ async function sendAlertsToUsers() {
     // Send alerts to each user
     for (const alert of alerts) {
       try {
-        // Determine the cutoff date: use last_triggered_at if available, otherwise last 10 minutes
+        // Determine the cutoff date: use last_triggered_at if available, otherwise last 60 minutes
+        // Use longer window to catch listings from recent scraping sessions
         const lastTriggered = alert.last_triggered_at ? new Date(alert.last_triggered_at) : null
-        const fallbackWindow = 10 // minutes - matches cron frequency
+        const fallbackWindow = 60 // minutes - longer window to catch recently scraped listings
         const sinceDate = lastTriggered || new Date(Date.now() - fallbackWindow * 60 * 1000)
         
-        console.log(`📧 Checking for ${alert.email} (since ${sinceDate.toISOString()})`)
+        // If last_triggered_at is very recent (less than 5 minutes ago), use 60 minutes window anyway
+        // This ensures we catch listings from the current scraping session
+        const now = new Date()
+        const timeSinceLastTrigger = lastTriggered ? (now - lastTriggered) / 1000 / 60 : 999
+        const effectiveSinceDate = (lastTriggered && timeSinceLastTrigger > 5) 
+          ? lastTriggered 
+          : new Date(Date.now() - fallbackWindow * 60 * 1000)
         
-        // Get new listings created since last alert (or last 10 minutes)
-        const newListings = await getNewListingsSince(sinceDate)
+        console.log(`📧 Checking for ${alert.email} (since ${effectiveSinceDate.toISOString()})`)
+        
+        // Get new listings created since last alert (or last 60 minutes)
+        const newListings = await getNewListingsSince(effectiveSinceDate)
         
         if (newListings.length === 0) {
           console.log(`   No new listings since last alert for ${alert.email}`)
