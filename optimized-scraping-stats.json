@@ -1,41 +1,41 @@
 {
-  "timestamp": "2025-10-30T03:03:19.402Z",
-  "duration": "11159 seconds",
+  "timestamp": "2025-10-30T21:26:28.392Z",
+  "duration": "1378 seconds",
   "totalScraped": 0,
   "totalNew": 0,
   "totalErrors": 0,
   "openAICalls": 0,
   "websiteStats": {
+    "wg-gesucht": {
+      "totalScraped": 0,
+      "totalNew": 0,
+      "totalErrors": 0,
+      "lastScrape": "2025-10-30T21:10:40.845Z"
+    },
     "immowelt": {
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T00:32:45.479Z"
+      "lastScrape": "2025-10-30T21:20:47.956Z"
     },
     "immonet": {
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T00:33:23.499Z"
+      "lastScrape": "2025-10-30T21:21:27.194Z"
     },
     "kleinanzeigen": {
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T02:45:00.990Z"
+      "lastScrape": "2025-10-30T21:25:57.588Z"
     },
     "immopool": {
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T03:03:19.402Z"
+      "lastScrape": "2025-10-30T21:26:28.392Z"
     }
   },
-  "errors": [
-    {
-      "website": "WG-Gesucht",
-      "error": "analysis is not defined",
-      "timestamp": "2025-10-29T23:57:32.163Z"
-    }
-  ]
+  "errors": []
 }

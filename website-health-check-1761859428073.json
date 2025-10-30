@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-10-30T21:23:48.073Z",
+  "totalWebsites": 5,
+  "working": 5,
+  "errors": 0,
+  "results": [
+    {
+      "name": "WG-Gesucht",
+      "url": "https://www.wg-gesucht.de/wohnungen-in-Berlin.8.0.1.0.html",
+      "provider": "wg-gesucht",
+      "status": "working",
+      "httpStatus": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "hasListings": true,
+      "lastChecked": "2025-10-30T21:23:37.274Z"
+    },
+    {
+      "name": "ImmoWelt",
+      "url": "https://www.immowelt.de/suche/berlin/wohnungen/mieten",
+      "provider": "immowelt",
+      "status": "working",
+      "httpStatus": 200,
+      "contentType": "text/html; charset=utf-8",
+      "hasListings": true,
+      "lastChecked": "2025-10-30T21:23:40.346Z"
+    },
+    {
+      "name": "ImmoNet",
+      "url": "https://www.immonet.de/immobiliensuche/sel.do?objecttype=2&sortby=20&marketingtype=1&locationname=Berlin",
+      "provider": "immonet",
+      "status": "working",
+      "httpStatus": 200,
+      "contentType": "text/html; charset=utf-8",
+      "hasListings": true,
+      "lastChecked": "2025-10-30T21:23:43.381Z"
+    },
+    {
+      "name": "eBay Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/c182l3331",
+      "provider": "kleinanzeigen",
+      "status": "working",
+      "httpStatus": 200,
+      "contentType": "text/html;charset=UTF-8",
+      "hasListings": true,
+      "lastChecked": "2025-10-30T21:23:45.872Z"
+    },
+    {
+      "name": "Immopool",
+      "url": "https://www.immopool.de/immobilien/wohnungen/berlin/mieten",
+      "provider": "immopool",
+      "status": "working",
+      "httpStatus": 200,
+      "contentType": "text/html",
+      "hasListings": false,
+      "lastChecked": "2025-10-30T21:23:48.073Z"
+    }
+  ]
+}

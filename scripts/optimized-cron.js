@@ -37,20 +37,20 @@ async function getUserAlerts() {
   }
 }
 
-// Get new listings from the last 10 minutes
-async function getNewListings() {
+// Get new listings from the last X minutes (default 60 for reliability)
+async function getNewListings(windowMinutes = 60) {
   const client = new MongoClient(MONGODB_URI)
   try {
     await client.connect()
     const db = client.db(DB_NAME)
     const listingsCollection = db.collection(COLLECTION_NAME)
     
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+    const since = new Date(Date.now() - windowMinutes * 60 * 1000)
     const newListings = await listingsCollection.find({
-      createdAt: { $gte: tenMinutesAgo }
+      createdAt: { $gte: since }
     }).toArray()
     
-    console.log(`📊 Found ${newListings.length} new listings in the last 10 minutes`)
+    console.log(`📊 Found ${newListings.length} new listings in the last ${windowMinutes} minutes`)
     return newListings
   } catch (error) {
     console.error('❌ Error fetching new listings:', error)
@@ -71,7 +71,8 @@ async function sendAlertsToUsers() {
       return
     }
     
-    const newListings = await getNewListings()
+    const windowMinutes = Number(process.env.ALERT_WINDOW_MINUTES || 60)
+    const newListings = await getNewListings(windowMinutes)
     if (newListings.length === 0) {
       console.log('📧 No new listings found')
       return
