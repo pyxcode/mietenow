@@ -231,11 +231,9 @@ export default function ListingDetailView({ listing, onBack }: ListingDetailView
                 {language === 'de' ? 'Beschreibung' : 'Description'}
               </h3>
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words bg-gray-50 p-4 rounded-xl">
-                {listing.description ? (
-                  <p className="text-sm">{listing.description}</p>
-                ) : (
-                  <p className="text-sm text-gray-500 italic">
-                    {language === 'de' ? 'Keine Beschreibung verfügbar' : 'No description available'}
+                {listing.description && (
+                  <p className="whitespace-pre-line text-gray-700 mt-4">
+                    {listing.description}
                   </p>
                 )}
               </div>

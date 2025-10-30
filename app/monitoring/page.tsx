@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Activity, TrendingUp, AlertCircle, CheckCircle, Clock, BarChart3 } from 'lucide-react'
+import { Activity, TrendingUp, AlertCircle, CheckCircle, Clock, BarChart3, Pause, Play } from 'lucide-react'
 
 interface WebsiteData {
   name: string
@@ -36,6 +37,12 @@ interface MonitoringData {
     lastUpdated: string
   }
   websites: Array<{ name: string; provider: string; color: string }>
+}
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Failed to fetch monitoring data')
+  return res.json()
 }
 
 // Individual website chart component
@@ -213,38 +220,21 @@ function OverallStats({ data }: { data: MonitoringData }) {
 }
 
 export default function MonitoringPage() {
-  const [data, setData] = useState<MonitoringData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/monitoring/scraping-data')
-      if (!response.ok) {
-        throw new Error('Failed to fetch monitoring data')
-      }
-      const result = await response.json()
-      setData(result)
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setLoading(false)
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  
+  const { data, error, isLoading, mutate } = useSWR<MonitoringData>(
+    '/api/monitoring/scraping-data',
+    fetcher,
+    {
+      refreshInterval: autoRefresh ? 10000 : 0, // 10s polling only for data
+      revalidateOnFocus: false,
     }
-  }
+  )
 
-  useEffect(() => {
-    fetchData()
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
             <Activity className="h-6 w-6 animate-spin" />
             <span>Loading monitoring data...</span>
@@ -254,16 +244,16 @@ export default function MonitoringPage() {
     )
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Error Loading Data</h2>
-            <p className="text-muted-foreground mb-4">{error}</p>
+            <p className="text-muted-foreground mb-4">{error instanceof Error ? error.message : 'Unknown error'}</p>
             <button 
-              onClick={fetchData}
+              onClick={() => mutate()}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Retry
@@ -274,27 +264,22 @@ export default function MonitoringPage() {
     )
   }
 
-  if (!data) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No Data Available</h2>
-            <p className="text-muted-foreground">No monitoring data found.</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Scraping Monitoring Dashboard</h1>
-        <p className="text-muted-foreground">
-          Real-time monitoring of scraping activity across all websites
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Scraping Monitoring Dashboard</h1>
+          <p className="text-muted-foreground">
+            Real-time monitoring of scraping activity across all websites
+          </p>
+        </div>
+        <button
+          onClick={() => setAutoRefresh(v => !v)}
+          className={`px-3 py-2 rounded text-white flex items-center gap-2 ${autoRefresh ? 'bg-gray-600 hover:bg-gray-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+          title={autoRefresh ? 'Pause auto-refresh' : 'Resume auto-refresh'}
+        >
+          {autoRefresh ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />} {autoRefresh ? 'Pause' : 'Auto-refresh'}
+        </button>
       </div>
 
       {/* Overall Statistics */}

@@ -39,6 +39,23 @@ const DEFAULT_HEADERS = {
   'Upgrade-Insecure-Requests': '1'
 }
 
+const BLACKLISTED_DOMAINS = [
+  'student.com',
+  'cn.student.com',
+  'uniplaces.com',
+  'spotahome.com',
+  'erasmusu.com'
+]
+
+function isBlacklistedUrl(url) {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return BLACKLISTED_DOMAINS.some(d => host === d || host.endsWith('.' + d))
+  } catch {
+    return false
+  }
+}
+
 class HttpOnlyCrawler {
   constructor(rootUrl, options = {}) {
     this.rootUrl = rootUrl
@@ -2054,6 +2071,14 @@ class HttpOnlyCrawler {
    */
   async processListingUrl(listingUrl) {
     if (this.visitedUrls.has(listingUrl)) return null
+
+    // Skip blacklisted marketplaces (student housing or non-Berlin portals)
+    if (isBlacklistedUrl(listingUrl)) {
+      console.log(`   ❌ Skipping blacklisted domain: ${listingUrl}`)
+      this.stats.failedExtractions++
+      return null
+    }
+
     this.visitedUrls.add(listingUrl)
 
     await this.delay(500) // Rate limiting

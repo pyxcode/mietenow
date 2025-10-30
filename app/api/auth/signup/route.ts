@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import { hashPassword } from '@/lib/auth'
 
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     await connectDB()
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier si l'utilisateur existe déjà
-    const existingUser = await User.findOne({ email })
+    const existingUser = await User.findOne({ email: email.toLowerCase() })
     if (existingUser) {
       return NextResponse.json({
         success: false,
@@ -52,9 +54,9 @@ export async function POST(request: NextRequest) {
       first_name: firstName,
       last_name: lastName,
       email: email.toLowerCase(),
-      password_hash: hashedPassword, // Use password_hash instead of password
+      password_hash: hashedPassword,
       plan: 'empty',
-      subscription_status: 'active', // Set to active instead of inactive
+      subscription_status: 'active',
       search_preferences: {
         city: city || 'Berlin',
         min_price: minPrice ? parseInt(minPrice) : undefined,
@@ -86,12 +88,16 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Signup error:', error)
-    
+
+    const message = process.env.NODE_ENV === 'production'
+      ? 'Erreur lors de la création du compte'
+      : (error?.message || JSON.stringify(error))
+
     return NextResponse.json({
       success: false,
-      message: 'Erreur lors de la création du compte'
+      message
     }, { status: 500 })
   }
 }
