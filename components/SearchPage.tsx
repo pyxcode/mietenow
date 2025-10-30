@@ -798,9 +798,9 @@ export default function SearchPage() {
 
 
         {/* Split layout: 2/3 listings, 1/3 map */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100%-56px)] w-full">
+        <div className="grid grid-cols-1 lg:[grid-template-columns:2fr_1fr] gap-4 h-[calc(100%-56px)] w-full">
           {/* Left: scrollable listings (2/3) */}
-          <div className="flex flex-col h-full pr-2 overflow-hidden lg:col-span-2">
+          <div className="flex flex-col h-full pr-2 overflow-hidden">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
                 <p className="text-red-600 text-sm">{error}</p>
@@ -870,17 +870,17 @@ export default function SearchPage() {
           </div>
 
           {/* Right: full-height map (1/3) */}
-              <div className="rounded-2xl overflow-hidden h-full lg:col-span-1">
-                <MapComponent 
-                  listings={filtered}
-                  selectedListing={filtered.find(l => l.id === activeId) || null}
-                  clickedListing={clickedListing}
-                  onListingSelect={(listing) => setActiveId(listing.id)}
-                  onBoundsChange={(newBounds) => setBounds(newBounds)}
-                  onRefreshVisibleListings={handleRefreshVisibleListings}
-                  onListingClick={handleListingClick}
-                />
-              </div>
+          <div className="rounded-2xl overflow-hidden h-full">
+            <MapComponent 
+              listings={filtered}
+              selectedListing={filtered.find(l => l.id === activeId) || null}
+              clickedListing={clickedListing}
+              onListingSelect={(listing) => setActiveId(listing.id)}
+              onBoundsChange={(newBounds) => setBounds(newBounds)}
+              onRefreshVisibleListings={handleRefreshVisibleListings}
+              onListingClick={handleListingClick}
+            />
+          </div>
         </div>
       </main>
 
