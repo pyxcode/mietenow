@@ -21,7 +21,7 @@ export async function sendEmail(emailData: EmailData) {
 
     const msg = {
       to: emailData.to,
-      from: 'louan@example.com', // Email temporaire pour les tests
+      from: process.env.SENDGRID_FROM_EMAIL || 'julia@mietenow.iqorbis.com',
       subject: emailData.subject,
       text: emailData.text || emailData.html.replace(/<[^>]*>/g, ''),
       html: emailData.html,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import { User, Alert, Listing } from '@/models'
-import { sendEmail, generateAlertEmailHTML } from '@/lib/sendgrid'
+import { sendEmail, generateAlertEmailHTML } from '@/lib/sendgrid-esm'
 
 export const runtime = 'nodejs'
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }).populate('alerts')
 
     let emailsSent = 0
-    let errors = []
+    let errors: string[] = []
 
     for (const user of usersWithAlerts) {
       try {
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
         if (newListings.length > 0) {
           // Générer et envoyer l'email
-          const emailHTML = generateAlertEmailHTML(newListings, user.search_preferences)
+          const emailHTML = generateAlertEmailHTML(newListings)
           
           const emailResult = await sendEmail({
             to: user.email,

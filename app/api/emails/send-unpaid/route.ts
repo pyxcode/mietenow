@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import { User, Listing } from '@/models'
-import { sendEmail, generateUnpaidUserEmailHTML } from '@/lib/sendgrid'
+import { sendEmail, generateUnpaidUserEmailHTML } from '@/lib/sendgrid-esm'
 
 export const runtime = 'nodejs'
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     })
 
     let emailsSent = 0
-    let errors = []
+    let errors: string[] = []
 
     for (const user of unpaidUsers) {
       try {
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
         if (listings.length > 0) {
           // Générer et envoyer l'email
-          const emailHTML = generateUnpaidUserEmailHTML(listings, preferences)
+          const emailHTML = generateUnpaidUserEmailHTML(listings)
           
           const emailResult = await sendEmail({
             to: user.email,

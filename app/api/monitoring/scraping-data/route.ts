@@ -20,6 +20,10 @@ const WEBSITES = [
   { name: 'Immowelt24', provider: 'immowelt24', color: '#85C1E9' }
 ]
 
+type WebsiteHourStats = { name: string; color: string; scraped: number; uploaded: number }
+
+type HourData = { hour: string; websites: Record<string, WebsiteHourStats> }
+
 export async function GET(request: NextRequest) {
   try {
     if (!MONGODB_URI) {
@@ -32,7 +36,7 @@ export async function GET(request: NextRequest) {
     const listingsCollection = db.collection(COLLECTION_NAME)
 
     // Get hourly data for the last 24 hours for each website
-    const hourlyData = []
+    const hourlyData: HourData[] = []
     for (let i = 23; i >= 0; i--) {
       const hour = new Date()
       hour.setHours(hour.getHours() - i, 0, 0, 0)
@@ -42,9 +46,9 @@ export async function GET(request: NextRequest) {
       const hourStart = hour.toISOString()
       const hourEnd = nextHour.toISOString()
       
-      const hourData = {
+      const hourData: HourData = {
         hour: hour.toISOString().slice(0, 13) + ':00',
-        websites: {}
+        websites: {} as Record<string, WebsiteHourStats>
       }
       
       // Get data for each website
