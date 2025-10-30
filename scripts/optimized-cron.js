@@ -26,7 +26,9 @@ async function getUserAlerts() {
     const db = client.db(DB_NAME)
     const alertsCollection = db.collection('alerts')
     
-    const alerts = await alertsCollection.find({ isActive: true }).toArray()
+    const alerts = await alertsCollection.find({ 
+      $or: [{ isActive: true }, { active: true }] 
+    }).toArray()
     console.log(`📧 Found ${alerts.length} active alerts`)
     return alerts
   } catch (error) {
@@ -37,20 +39,19 @@ async function getUserAlerts() {
   }
 }
 
-// Get new listings from the last X minutes (default 60 for reliability)
-async function getNewListings(windowMinutes = 60) {
+// Get new listings created after a specific date
+async function getNewListingsSince(sinceDate) {
   const client = new MongoClient(MONGODB_URI)
   try {
     await client.connect()
     const db = client.db(DB_NAME)
     const listingsCollection = db.collection(COLLECTION_NAME)
     
-    const since = new Date(Date.now() - windowMinutes * 60 * 1000)
     const newListings = await listingsCollection.find({
-      createdAt: { $gte: since }
+      createdAt: { $gte: sinceDate }
     }).toArray()
     
-    console.log(`📊 Found ${newListings.length} new listings in the last ${windowMinutes} minutes`)
+    console.log(`📊 Found ${newListings.length} new listings since ${sinceDate.toISOString()}`)
     return newListings
   } catch (error) {
     console.error('❌ Error fetching new listings:', error)
@@ -62,30 +63,50 @@ async function getNewListings(windowMinutes = 60) {
 
 // Send alerts to users
 async function sendAlertsToUsers() {
+  const client = new MongoClient(MONGODB_URI)
   try {
     console.log('\n📧 Checking for new listings to send alerts...')
     
-    const alerts = await getUserAlerts()
+    await client.connect()
+    const db = client.db(DB_NAME)
+    const alertsCollection = db.collection('alerts')
+    
+    const alerts = await alertsCollection.find({ 
+      $or: [{ isActive: true }, { active: true }] 
+    }).toArray()
+    
     if (alerts.length === 0) {
       console.log('📧 No active alerts found')
       return
     }
     
-    const windowMinutes = Number(process.env.ALERT_WINDOW_MINUTES || 60)
-    const newListings = await getNewListings(windowMinutes)
-    if (newListings.length === 0) {
-      console.log('📧 No new listings found')
-      return
-    }
+    console.log(`📧 Found ${alerts.length} active alerts`)
     
     // Send alerts to each user
     for (const alert of alerts) {
       try {
+        // Determine the cutoff date: use last_triggered_at if available, otherwise last 10 minutes
+        const lastTriggered = alert.last_triggered_at ? new Date(alert.last_triggered_at) : null
+        const fallbackWindow = 10 // minutes - matches cron frequency
+        const sinceDate = lastTriggered || new Date(Date.now() - fallbackWindow * 60 * 1000)
+        
+        console.log(`📧 Checking for ${alert.email} (since ${sinceDate.toISOString()})`)
+        
+        // Get new listings created since last alert (or last 10 minutes)
+        const newListings = await getNewListingsSince(sinceDate)
+        
+        if (newListings.length === 0) {
+          console.log(`   No new listings since last alert for ${alert.email}`)
+          continue
+        }
+        
         // Filter listings based on user preferences
         const matchingListings = newListings.filter(listing => {
-          // Basic filtering based on price range
-          if (alert.minPrice && listing.price < alert.minPrice) return false
-          if (alert.maxPrice && listing.price > alert.maxPrice) return false
+          const minPrice = alert.minPrice !== undefined ? alert.minPrice : alert.criteria?.min_price
+          const maxPrice = alert.maxPrice !== undefined ? alert.maxPrice : alert.criteria?.max_price
+          
+          if (minPrice !== undefined && minPrice !== null && listing.price < minPrice) return false
+          if (maxPrice !== undefined && maxPrice !== null && listing.price > maxPrice) return false
           return true
         })
         
@@ -93,13 +114,24 @@ async function sendAlertsToUsers() {
           console.log(`📧 Sending alert to ${alert.email} with ${matchingListings.length} matching listings`)
           
           const emailContent = generateEmailContent(matchingListings, alert)
-          await sendEmail({
+          const result = await sendEmail({
             to: alert.email,
             subject: `🏠 ${matchingListings.length} New Rental Listings Found!`,
             html: emailContent
           })
           
-          console.log(`✅ Alert sent to ${alert.email}`)
+          if (result.success) {
+            // Update last_triggered_at in the alert
+            await alertsCollection.updateOne(
+              { _id: alert._id },
+              { $set: { last_triggered_at: new Date() } }
+            )
+            console.log(`✅ Alert sent to ${alert.email} (updated last_triggered_at)`)
+          } else {
+            console.log(`❌ Failed to send alert to ${alert.email}: ${result.error}`)
+          }
+        } else {
+          console.log(`   No matching listings for ${alert.email}`)
         }
       } catch (error) {
         console.error(`❌ Error sending alert to ${alert.email}:`, error)
@@ -107,6 +139,8 @@ async function sendAlertsToUsers() {
     }
   } catch (error) {
     console.error('❌ Error in sendAlertsToUsers:', error)
+  } finally {
+    await client.close()
   }
 }
 

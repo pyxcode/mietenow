@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-10-30T21:26:28.392Z",
-  "duration": "1378 seconds",
+  "timestamp": "2025-10-30T21:48:08.260Z",
+  "duration": "1472 seconds",
   "totalScraped": 0,
   "totalNew": 0,
   "totalErrors": 0,
@@ -10,31 +10,31 @@
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T21:10:40.845Z"
+      "lastScrape": "2025-10-30T21:31:41.234Z"
     },
     "immowelt": {
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T21:20:47.956Z"
+      "lastScrape": "2025-10-30T21:42:10.412Z"
     },
     "immonet": {
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T21:21:27.194Z"
+      "lastScrape": "2025-10-30T21:42:57.408Z"
     },
     "kleinanzeigen": {
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T21:25:57.588Z"
+      "lastScrape": "2025-10-30T21:47:37.463Z"
     },
     "immopool": {
       "totalScraped": 0,
       "totalNew": 0,
       "totalErrors": 0,
-      "lastScrape": "2025-10-30T21:26:28.392Z"
+      "lastScrape": "2025-10-30T21:48:08.260Z"
     }
   },
   "errors": []

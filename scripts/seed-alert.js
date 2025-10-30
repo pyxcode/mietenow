@@ -24,9 +24,14 @@ async function main() {
 
     const doc = {
       user_id: new ObjectId(userId),
-      email,
-      isActive: true,
-      createdAt: new Date(),
+      email: email.toLowerCase(),
+      title: `Alert for Berlin - Any`,
+      active: true,
+      isActive: true, // For backward compatibility with cron
+      frequency: 'daily',
+      created_at: new Date(),
+      createdAt: new Date(), // For backward compatibility
+      last_triggered_at: new Date(Date.now() - 25 * 60 * 60 * 1000), // 25 hours ago to allow triggering
       // top-level for backward-compat with cron matching
       minPrice: 0,
       maxPrice: 20000,
@@ -35,12 +40,13 @@ async function main() {
         min_price: 0,
         max_price: 20000,
         type: 'Any',
-        furnishing: 'Any'
+        furnishing: 'Any',
+        min_surface: 0
       }
     }
 
     const res = await alerts.updateOne(
-      { email },
+      { email: email.toLowerCase() },
       { $set: doc },
       { upsert: true }
     )
