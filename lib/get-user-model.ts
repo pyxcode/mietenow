@@ -38,14 +38,33 @@ export async function getUserModel(): Promise<Model<IUser>> {
     throw new Error(errorMsg)
   }
   
-  // Si le modèle existe déjà sur cette connexion, le retourner
+  // Si le modèle existe déjà sur cette connexion, vérifier qu'il est sur la bonne base
   if (mongoose.connection.models.User) {
     // Vérifier que le modèle est bien sur la bonne base
-    const modelDb = (mongoose.connection.models.User as any).db?.databaseName
+    const existingModel = mongoose.connection.models.User as any
+    const modelDb = existingModel.db?.databaseName
+    
     if (modelDb && modelDb !== DB_NAME) {
-      console.warn(`⚠️ Modèle User sur mauvaise base: ${modelDb}, recréation...`)
-      delete mongoose.connection.models.User
+      // Le modèle existe mais sur la mauvaise base - on ne peut pas le supprimer car models est readonly
+      // On va créer un nouveau modèle avec un nom unique pour forcer la recréation
+      console.warn(`⚠️ Modèle User sur mauvaise base: ${modelDb}, création d'un nouveau modèle...`)
+      // Créer avec un nom unique pour éviter le conflit, puis récupérer le modèle
+      const schema = await getUserSchema()
+      // Supprimer l'ancien modèle en utilisant deleteModel si disponible, sinon créer avec un nom unique
+      try {
+        // Essayer de supprimer via deleteModel (nouvelle API Mongoose)
+        if (mongoose.connection.deleteModel) {
+          mongoose.connection.deleteModel('User')
+        }
+      } catch (e) {
+        // Si deleteModel n'existe pas ou échoue, on va créer le modèle quand même
+        // Mongoose écrasera l'ancien si on utilise le même nom
+      }
+      // Créer le nouveau modèle
+      const model = mongoose.connection.model<IUser>('User', schema)
+      return model as Model<IUser>
     } else {
+      // Le modèle existe et est sur la bonne base
       return mongoose.connection.models.User as Model<IUser>
     }
   }
