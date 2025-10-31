@@ -141,31 +141,47 @@ class HttpOnlyCrawler {
     try {
       // Convert mongodb+srv to mongodb if needed
       let mongoUri = this.mongoUri
-      if (mongoUri && mongoUri.includes('mongodb+srv://')) {
-        const match = mongoUri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)(\?.*)?/)
-        if (match) {
-          const [, username, password, host, database, query] = match
-          mongoUri = `mongodb://${username}:${password}@${host}:27017/${database}${query || ''}`
-        }
-      }
-
-      // Replace database name if needed
-      if (mongoUri && mongoUri.includes('/?') && !mongoUri.includes(this.dbName)) {
-        mongoUri = mongoUri.replace('/?', `/${this.dbName}?`)
-      } else if (mongoUri && !mongoUri.includes(`/${this.dbName}`)) {
-        mongoUri = mongoUri.replace(/\/[^/]*(\?|$)/, `/${this.dbName}$1`)
-      }
-
       if (!mongoUri) {
         console.log('⚠️  MONGODB_URI not found in environment variables')
         return false
       }
 
+      if (mongoUri.includes('mongodb+srv://')) {
+        const match = mongoUri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)?(\?.*)?/)
+        if (match) {
+          const [, username, password, host, database, query] = match
+          // Always use mietenow-prod, ignore database from URI
+          mongoUri = `mongodb://${username}:${password}@${host}:27017/${this.dbName}${query || ''}`
+        }
+      } else {
+        // For mongodb:// URIs, force database name
+        // Extract base URI (everything before the database name)
+        const uriMatch = mongoUri.match(/^(mongodb:\/\/[^\/]+)\/?([^?]*)(\?.*)?$/)
+        if (uriMatch) {
+          const [, baseUri, existingDb, query] = uriMatch
+          // Always use mietenow-prod
+          mongoUri = `${baseUri}/${this.dbName}${query || ''}`
+        } else {
+          // Fallback: replace database name in URI
+          mongoUri = mongoUri.replace(/\/[^\/\?]+(\?|$)/, `/${this.dbName}$1`)
+          if (!mongoUri.includes(`/${this.dbName}`)) {
+            if (mongoUri.includes('/?')) {
+              mongoUri = mongoUri.replace('/?', `/${this.dbName}?`)
+            } else if (mongoUri.endsWith('/')) {
+              mongoUri = mongoUri + this.dbName
+            } else {
+              mongoUri = mongoUri + '/' + this.dbName
+            }
+          }
+        }
+      }
+
+      console.log(`🔗 Connecting to MongoDB - Database: ${this.dbName}`)
       this.mongoClient = new MongoClient(mongoUri)
       await this.mongoClient.connect()
       const db = this.mongoClient.db(this.dbName)
       this.mongoCollection = db.collection(this.collectionName)
-      console.log('✅ Connected to MongoDB')
+      console.log(`✅ Connected to MongoDB - Database: ${this.dbName}, Collection: ${this.collectionName}`)
       return true
     } catch (error) {
       console.error('❌ MongoDB connection failed:', error.message)

@@ -17,8 +17,42 @@ export async function GET(
       }, { status: 400 })
     }
 
-    // Connecter à MongoDB
-    const client = new MongoClient(process.env.MONGODB_URI!)
+    // Connecter à MongoDB - FORCER mietenow-prod
+    let mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URI2
+    if (!mongoUri) {
+      return NextResponse.json({
+        success: false,
+        error: 'MONGODB_URI not configured'
+      }, { status: 500 })
+    }
+
+    // Forcer mietenow-prod dans l'URI
+    if (mongoUri.includes('mongodb+srv://')) {
+      const match = mongoUri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)?(\?.*)?/)
+      if (match) {
+        const [, username, password, host, database, query] = match
+        mongoUri = `mongodb://${username}:${password}@${host}:27017/mietenow-prod${query || ''}`
+      }
+    } else {
+      // Remplacer n'importe quelle base de données par mietenow-prod
+      const uriMatch = mongoUri.match(/^(mongodb:\/\/[^\/]+)\/?([^?]*)(\?.*)?$/)
+      if (uriMatch) {
+        const [, baseUri, existingDb, query] = uriMatch
+        mongoUri = `${baseUri}/mietenow-prod${query || ''}`
+      } else {
+        mongoUri = mongoUri.replace(/\/[^\/\?]+(\?|$)/, `/mietenow-prod$1`)
+        if (!mongoUri.includes('/mietenow-prod')) {
+          mongoUri = mongoUri.replace('/?', '/mietenow-prod?').replace(/\/$/, '/mietenow-prod')
+        }
+      }
+    }
+
+    // S'assurer qu'on n'utilise JAMAIS "test"
+    if (mongoUri.includes('/test')) {
+      mongoUri = mongoUri.replace('/test', '/mietenow-prod')
+    }
+
+    const client = new MongoClient(mongoUri)
     await client.connect()
     
     const db = client.db('mietenow-prod')

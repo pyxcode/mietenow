@@ -4,19 +4,12 @@ import mongoose from 'mongoose'
 
 export async function POST(request: NextRequest) {
   try {
-    // Forcer la connexion à mietenow-prod
-    const MONGODB_URI = process.env.MONGODB_URI
-    if (!MONGODB_URI) {
-      return NextResponse.json({ error: 'MONGODB_URI not configured' }, { status: 500 })
-    }
+    // Forcer la connexion à mietenow-prod via connectDB (qui force déjà mietenow-prod)
+    await connectDB()
     
-    // Forcer l'utilisation de mietenow-prod
-    const mongoUri = MONGODB_URI.endsWith('/') 
-      ? MONGODB_URI.slice(0, -1) 
-      : MONGODB_URI
-    const finalUri = `${mongoUri}/mietenow-prod`
-    
-    await mongoose.connect(finalUri)
+    // S'assurer qu'on utilise bien mietenow-prod
+    const connection = mongoose.connection.useDb('mietenow-prod')
+    const db = connection.db
     
     const { plan, userId } = await request.json()
     
@@ -31,8 +24,7 @@ export async function POST(request: NextRequest) {
     // Utiliser l'ID de l'utilisateur passé en paramètre
     const userObjectId = new mongoose.Types.ObjectId(userId)
     
-    // Utiliser directement la collection MongoDB
-    const db = mongoose.connection.db
+    console.log(`📊 Using database: ${db.databaseName}`)
     if (!db) {
       throw new Error('Database connection not established')
     }

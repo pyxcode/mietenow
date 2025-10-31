@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MongoClient } from 'mongodb'
+import { createMongoClient } from '@/lib/mongodb-client'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,14 +13,8 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating/updating alert:', { title, criteria, email })
 
-    // Connecter à MongoDB
-    const MONGODB_URI = process.env.MONGODB_URI
-    if (!MONGODB_URI) {
-      return NextResponse.json({ error: 'MONGODB_URI not configured' }, { status: 500 })
-    }
-    const client = new MongoClient(MONGODB_URI)
-    await client.connect()
-    
+    // Connecter à MongoDB - FORCER mietenow-prod
+    const client = await createMongoClient()
     const db = client.db('mietenow-prod')
     const collection = db.collection('alerts')
     
@@ -86,14 +80,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Connecter à MongoDB
-    const MONGODB_URI = process.env.MONGODB_URI
-    if (!MONGODB_URI) {
-      return NextResponse.json({ error: 'MONGODB_URI not configured' }, { status: 500 })
-    }
-    const client = new MongoClient(MONGODB_URI)
-    await client.connect()
-    
+    // Connecter à MongoDB - FORCER mietenow-prod
+    const client = await createMongoClient()
     const db = client.db('mietenow-prod')
     const collection = db.collection('alerts')
     

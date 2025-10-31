@@ -71,6 +71,9 @@ export async function GET(request: NextRequest) {
     // Mongoose pourrait utiliser une autre DB si elle est dans l'URI
     const connection = mongoose.connection.useDb(DB_NAME)
     const db = connection.db
+    if (!db) {
+      throw new Error('Database connection not established')
+    }
     const collection = db.collection('listings')
     
     console.log(`📊 Using database: ${db.databaseName}`)

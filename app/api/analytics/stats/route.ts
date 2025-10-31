@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MongoClient } from 'mongodb'
+import { createMongoClient } from '@/lib/mongodb-client'
 
-const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URI2
 const DB_NAME = 'mietenow-prod'
 const COLLECTION_NAME = 'listings'
 
@@ -11,16 +10,8 @@ const COST_PER_CALL_EUR = 0.001028 // ~0.103 centimes par appel
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  if (!MONGODB_URI) {
-    return NextResponse.json(
-      { error: 'MongoDB URI not configured' },
-      { status: 500 }
-    )
-  }
-
   try {
-    const client = new MongoClient(MONGODB_URI)
-    await client.connect()
+    const client = await createMongoClient()
     const db = client.db(DB_NAME)
     const collection = db.collection(COLLECTION_NAME)
 

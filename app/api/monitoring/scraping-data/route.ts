@@ -26,12 +26,8 @@ type HourData = { hour: string; websites: Record<string, WebsiteHourStats> }
 
 export async function GET(request: NextRequest) {
   try {
-    if (!MONGODB_URI) {
-      return NextResponse.json({ error: 'MongoDB not configured' }, { status: 500 })
-    }
-
-    const client = new MongoClient(MONGODB_URI)
-    await client.connect()
+    const { createMongoClient } = await import('@/lib/mongodb-client')
+    const client = await createMongoClient()
     const db = client.db(DB_NAME)
     const listingsCollection = db.collection(COLLECTION_NAME)
 
