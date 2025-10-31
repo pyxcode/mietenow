@@ -175,12 +175,65 @@ async function scrapeWebsite(site) {
   }
 }
 
+// Helper function to force MongoDB URI to mietenow-prod
+function forceMongoUri(originalUri) {
+  if (!originalUri) {
+    throw new Error('MONGODB_URI environment variable is not defined')
+  }
+
+  let uri = originalUri.trim().replace(/^['"]|['"]$/g, '')
+
+  // Convertir mongodb+srv:// en mongodb:// si nécessaire
+  if (uri.includes('mongodb+srv://')) {
+    const match = uri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)?(\?.*)?/)
+    if (match) {
+      const [, username, password, host, , query] = match
+      const shardHost = process.env.MONGODB_URI2?.replace(/^['"]|['"]$/g, '').match(/@([^:]+):/)?.[1] || host
+      // Retirer directConnection=true
+      const cleanQuery = (query || '').replace(/[?&]directConnection=[^&]*/gi, '')
+      uri = `mongodb://${username}:${password}@${shardHost}:27017/${DB_NAME}${cleanQuery || ''}`
+    }
+  } else {
+    const uriMatch = uri.match(/^(mongodb:\/\/[^\/]+)\/?([^?]*)(\?.*)?$/)
+    if (uriMatch) {
+      const [, baseUri, , query] = uriMatch
+      // Retirer directConnection=true
+      const cleanQuery = (query || '').replace(/[?&]directConnection=[^&]*/gi, '')
+      uri = `${baseUri}/${DB_NAME}${cleanQuery || ''}`
+    }
+  }
+
+  // GARANTIR que mietenow-prod est dans l'URI et que "test" n'y est pas
+  if (uri.includes('/test')) {
+    uri = uri.replace(/\/test(\?|$)/, `/${DB_NAME}$1`)
+  }
+
+  if (!uri.includes(`/${DB_NAME}`)) {
+    if (uri.includes('/?')) {
+      uri = uri.replace('/?', `/${DB_NAME}?`)
+    } else if (uri.endsWith('/')) {
+      uri = uri + DB_NAME
+    } else if (!uri.match(/\/[^\/\?]+(\?|$)/)) {
+      uri = uri + '/' + DB_NAME
+    }
+  }
+
+  return uri
+}
+
 // Get user alerts from database
 async function getUserAlerts() {
-  const client = new MongoClient(MONGODB_URI)
+  const forcedUri = forceMongoUri(MONGODB_URI)
+  const client = new MongoClient(forcedUri)
   try {
     await client.connect()
     const db = client.db(DB_NAME)
+    
+    // VÉRIFICATION
+    if (db.databaseName !== DB_NAME) {
+      throw new Error(`CRITICAL: Connected to "${db.databaseName}" instead of "${DB_NAME}"`)
+    }
+    
     const alertsCollection = db.collection(ALERTS_COLLECTION)
     const usersCollection = db.collection(USERS_COLLECTION)
     
@@ -206,10 +259,17 @@ async function getUserAlerts() {
 
 // Get new listings from the last scraping session
 async function getNewListings() {
-  const client = new MongoClient(MONGODB_URI)
+  const forcedUri = forceMongoUri(MONGODB_URI)
+  const client = new MongoClient(forcedUri)
   try {
     await client.connect()
     const db = client.db(DB_NAME)
+    
+    // VÉRIFICATION
+    if (db.databaseName !== DB_NAME) {
+      throw new Error(`CRITICAL: Connected to "${db.databaseName}" instead of "${DB_NAME}"`)
+    }
+    
     const collection = db.collection(COLLECTION_NAME)
     
     // Get listings from the last 5 minutes (new listings)

@@ -130,7 +130,7 @@ class HttpOnlyCrawler {
   }
 
   /**
-   * Connect to MongoDB
+   * Connect to MongoDB - FORCE mietenow-prod
    */
   async connectMongo() {
     if (!this.saveToMongo || !this.mongoUri) {
@@ -139,49 +139,67 @@ class HttpOnlyCrawler {
     }
 
     try {
-      // Convert mongodb+srv to mongodb if needed
+      // FORCER mietenow-prod avec la même logique que lib/mongodb-client.ts
       let mongoUri = this.mongoUri
       if (!mongoUri) {
         console.log('⚠️  MONGODB_URI not found in environment variables')
         return false
       }
 
+      // ENLEVER les quotes si présentes (bug dans .env.local)
+      mongoUri = mongoUri.trim().replace(/^['"]|['"]$/g, '')
+
+      // Convertir mongodb+srv:// en mongodb:// si nécessaire
       if (mongoUri.includes('mongodb+srv://')) {
         const match = mongoUri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)?(\?.*)?/)
         if (match) {
-          const [, username, password, host, database, query] = match
-          // Always use mietenow-prod, ignore database from URI
-          mongoUri = `mongodb://${username}:${password}@${host}:27017/${this.dbName}${query || ''}`
+          const [, username, password, host, , query] = match
+          // Utiliser le hostname du shard si disponible dans MONGODB_URI2
+          const shardHost = process.env.MONGODB_URI2?.replace(/^['"]|['"]$/g, '').match(/@([^:]+):/)?.[1] || host
+          mongoUri = `mongodb://${username}:${password}@${shardHost}:27017/${this.dbName}${query || ''}`
         }
       } else {
-        // For mongodb:// URIs, force database name
-        // Extract base URI (everything before the database name)
+        // Pour mongodb://, extraire la base URI et forcer mietenow-prod
         const uriMatch = mongoUri.match(/^(mongodb:\/\/[^\/]+)\/?([^?]*)(\?.*)?$/)
         if (uriMatch) {
-          const [, baseUri, existingDb, query] = uriMatch
-          // Always use mietenow-prod
+          const [, baseUri, , query] = uriMatch
           mongoUri = `${baseUri}/${this.dbName}${query || ''}`
-        } else {
-          // Fallback: replace database name in URI
-          mongoUri = mongoUri.replace(/\/[^\/\?]+(\?|$)/, `/${this.dbName}$1`)
-          if (!mongoUri.includes(`/${this.dbName}`)) {
-            if (mongoUri.includes('/?')) {
-              mongoUri = mongoUri.replace('/?', `/${this.dbName}?`)
-            } else if (mongoUri.endsWith('/')) {
-              mongoUri = mongoUri + this.dbName
-            } else {
-              mongoUri = mongoUri + '/' + this.dbName
-            }
-          }
+        }
+      }
+
+      // GARANTIR que mietenow-prod est dans l'URI et que "test" n'y est pas
+      if (mongoUri.includes('/test')) {
+        mongoUri = mongoUri.replace(/\/test(\?|$)/, `/${this.dbName}$1`)
+      }
+
+      // Retirer directConnection=true pour permettre la connexion au replica set primaire
+      mongoUri = mongoUri.replace(/[?&]directConnection=[^&]*/gi, '').replace(/\?&/, '?').replace(/[?&]$/, '')
+
+      if (!mongoUri.includes(`/${this.dbName}`)) {
+        // Ajouter mietenow-prod si absent
+        if (mongoUri.includes('/?')) {
+          mongoUri = mongoUri.replace('/?', `/${this.dbName}?`)
+        } else if (mongoUri.endsWith('/')) {
+          mongoUri = mongoUri + this.dbName
+        } else if (!mongoUri.match(/\/[^\/\?]+(\?|$)/)) {
+          mongoUri = mongoUri + '/' + this.dbName
         }
       }
 
       console.log(`🔗 Connecting to MongoDB - Database: ${this.dbName}`)
+      console.log(`   URI: ${mongoUri.replace(/:[^:@]+@/, ':****@')}`)
+      
       this.mongoClient = new MongoClient(mongoUri)
       await this.mongoClient.connect()
       const db = this.mongoClient.db(this.dbName)
+      
+      // VÉRIFICATION: S'assurer qu'on utilise bien la bonne base
+      if (db.databaseName !== this.dbName) {
+        throw new Error(`CRITICAL: Connected to "${db.databaseName}" instead of "${this.dbName}"`)
+      }
+      
       this.mongoCollection = db.collection(this.collectionName)
-      console.log(`✅ Connected to MongoDB - Database: ${this.dbName}, Collection: ${this.collectionName}`)
+      console.log(`✅ Connected to MongoDB - Database: ${db.databaseName}, Collection: ${this.collectionName}`)
       return true
     } catch (error) {
       console.error('❌ MongoDB connection failed:', error.message)
