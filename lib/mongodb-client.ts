@@ -1,6 +1,6 @@
 /**
  * MongoDB Client Helper
- * Force toujours l'utilisation de mietenow-prod, ignore "test" ou tout autre nom de base
+ * Force toujours l'utilisation de mietenow-prod
  */
 
 import { MongoClient } from 'mongodb'
@@ -9,7 +9,6 @@ const DB_NAME = 'mietenow-prod'
 
 /**
  * Crée une URI MongoDB qui force toujours l'utilisation de mietenow-prod
- * Ignore complètement le nom de base de données dans l'URI originale
  */
 export function forceMongoUri(originalUri: string | undefined): string {
   if (!originalUri) {
@@ -18,40 +17,24 @@ export function forceMongoUri(originalUri: string | undefined): string {
 
   let uri = originalUri
 
-  // Si c'est une URI mongodb+srv://, la convertir en mongodb:// direct
+  // Convertir mongodb+srv:// en mongodb:// si nécessaire
   if (uri.includes('mongodb+srv://')) {
     const match = uri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)?(\?.*)?/)
     if (match) {
-      const [, username, password, host, database, query] = match
-      // TOUJOURS utiliser mietenow-prod, ignorer le database de l'URI
-      uri = `mongodb://${username}:${password}@${host}:27017/${DB_NAME}${query || ''}`
+      const [, username, password, host, , query] = match
+      // Utiliser le hostname du shard si disponible
+      const shardHost = process.env.MONGODB_URI2?.replace(/^['"]|['"]$/g, '').match(/@([^:]+):/)?.[1] || host
+      // Retirer directConnection=true pour permettre la connexion au replica set
+      const cleanQuery = (query || '').replace(/[?&]directConnection=[^&]*/gi, '')
+      uri = `mongodb://${username}:${password}@${shardHost}:27017/${DB_NAME}${cleanQuery || ''}`
     }
   } else {
     // Pour mongodb://, extraire la base URI et forcer mietenow-prod
     const uriMatch = uri.match(/^(mongodb:\/\/[^\/]+)\/?([^?]*)(\?.*)?$/)
     if (uriMatch) {
-      const [, baseUri, existingDb, query] = uriMatch
-      // TOUJOURS utiliser mietenow-prod, ignorer existingDb (même si c'est "test")
+      const [, baseUri, , query] = uriMatch
       uri = `${baseUri}/${DB_NAME}${query || ''}`
-    } else {
-      // Fallback: remplacer n'importe quelle base de données par mietenow-prod
-      uri = uri.replace(/\/[^\/\?]+(\?|$)/, `/${DB_NAME}$1`)
-      if (!uri.includes(`/${DB_NAME}`)) {
-        if (uri.includes('/?')) {
-          uri = uri.replace('/?', `/${DB_NAME}?`)
-        } else if (uri.endsWith('/')) {
-          uri = uri + DB_NAME
-        } else {
-          uri = uri + '/' + DB_NAME
-        }
-      }
     }
-  }
-
-  // Vérification finale: s'assurer qu'on n'utilise JAMAIS "test"
-  if (uri.includes('/test')) {
-    uri = uri.replace('/test', `/${DB_NAME}`)
-    console.warn(`⚠️ URI contenait "test", remplacé par "${DB_NAME}"`)
   }
 
   return uri

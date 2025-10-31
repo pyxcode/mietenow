@@ -14,8 +14,9 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔍 API GET /api/user/preferences appelée')
     
+    // Connexion à la base de données (force déjà mietenow-prod)
     await connectDB()
-    console.log('✅ Connecté à MongoDB')
+    console.log('✅ Connecté à MongoDB - Base: mietenow-prod')
     
     // Récupérer l'ID utilisateur depuis les headers ou les query params
     const userId = request.headers.get('x-user-id') || 

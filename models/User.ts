@@ -219,4 +219,9 @@ UserSchema.methods.calculatePlanExpiry = function(planType: string) {
   return expiryDate
 }
 
+// Export du schéma pour pouvoir créer le modèle sur différentes connexions
+export { UserSchema }
+
+// Le modèle par défaut utilise mongoose.connection
+// ATTENTION: Utilisez getUserModelFromConnection() dans les APIs pour forcer mietenow-prod
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema)

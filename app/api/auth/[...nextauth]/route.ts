@@ -1,8 +1,7 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import connectDB from '@/lib/mongodb'
-import mongoose from 'mongoose'
-import { User } from '@/models'
+import { getUserModel } from '@/lib/get-user-model'
 import bcrypt from 'bcryptjs'
 
 const handler = NextAuth({
@@ -21,28 +20,36 @@ const handler = NextAuth({
         try {
           await connectDB()
           
-          // Forcer l'utilisation de mietenow-prod
-          const connection = mongoose.connection.useDb('mietenow-prod')
-          console.log(`🔐 NextAuth - Base de données: ${connection.db?.databaseName || 'unknown'}`)
+          // Obtenir le modèle User (déjà sur mietenow-prod)
+          const UserModel = await getUserModel()
+          console.log(`🔐 NextAuth - Utilise le modèle User`)
           
-          // Utiliser la connexion forcée pour chercher l'utilisateur
-          const user = await User.findOne({ email: credentials.email.toLowerCase() })
+          // Chercher l'utilisateur
+          const user = await UserModel.findOne({ email: credentials.email.toLowerCase() })
           
           if (!user) {
-            console.log('❌ Utilisateur non trouvé:', credentials.email)
+            console.log('❌ NextAuth - Utilisateur non trouvé:', credentials.email)
             return null
           }
+          
+          console.log('✅ NextAuth - Utilisateur trouvé:', credentials.email)
 
           // Vérifier le mot de passe
-          const passwordField = user.password || user.password_hash
+          const userDoc = user.toObject ? user.toObject() : user
+          const passwordField = (userDoc as any).password || (userDoc as any).password_hash
+          
           if (!passwordField) {
-            console.log('❌ Pas de mot de passe pour:', credentials.email)
+            console.log('❌ NextAuth - Pas de mot de passe pour:', credentials.email)
             return null
           }
-
+          
+          console.log('🔑 NextAuth - Vérification du mot de passe...')
           const isPasswordValid = await bcrypt.compare(credentials.password, passwordField)
+          
           if (!isPasswordValid) {
-            console.log('❌ Mot de passe invalide pour:', credentials.email)
+            console.log('❌ NextAuth - Mot de passe invalide pour:', credentials.email)
+            console.log('   Longueur password fourni:', credentials.password?.length)
+            console.log('   Longueur hash en base:', passwordField?.length)
             return null
           }
 
@@ -51,13 +58,13 @@ const handler = NextAuth({
           // Retourner l'objet utilisateur qui sera stocké dans la session
           return {
             id: user._id.toString(),
-            email: user.email,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            plan: user.plan,
-            subscription_status: user.subscription_status,
-            plan_expires_at: user.plan_expires_at,
-            isSubscribed: user.isSubscribed,
+            email: (userDoc as any).email,
+            firstName: (userDoc as any).first_name,
+            lastName: (userDoc as any).last_name,
+            plan: (userDoc as any).plan,
+            subscription_status: (userDoc as any).subscription_status,
+            plan_expires_at: (userDoc as any).plan_expires_at,
+            isSubscribed: (userDoc as any).isSubscribed || false,
             // Stocker l'ID utilisateur pour les appels API backend
             userId: user._id.toString()
           }

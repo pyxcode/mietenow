@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
-import User from '@/models/User'
+import { getUserModel } from '@/lib/get-user-model'
 import { hashPassword } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
+    // Connexion à la base de données (force déjà mietenow-prod)
     await connectDB()
+    
+    // Obtenir le modèle User (déjà sur mietenow-prod)
+    const UserModel = await getUserModel()
 
     const body = await request.json()
     const {
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier si l'utilisateur existe déjà
-    const existingUser = await User.findOne({ email: email.toLowerCase() })
+    const existingUser = await UserModel.findOne({ email: email.toLowerCase() })
     if (existingUser) {
       return NextResponse.json({
         success: false,
@@ -50,7 +54,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password)
 
     // Créer l'utilisateur
-    const user = new User({
+    const user = new UserModel({
       first_name: firstName,
       last_name: lastName,
       email: email.toLowerCase(),

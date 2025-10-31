@@ -3,7 +3,7 @@ export const runtime = 'nodejs'
 
 import bcrypt from 'bcryptjs'
 import connectDB from '@/lib/mongodb'
-import { User } from '@/models'
+import { getUserModel } from '@/lib/get-user-model'
 
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {
@@ -22,19 +22,24 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Connexion à la base de données
+    // Connexion à la base de données (force déjà mietenow-prod)
     await connectDB()
+    
+    // Obtenir le modèle User (déjà sur mietenow-prod)
+    const UserModel = await getUserModel()
+    console.log(`🔐 Login - Utilise le modèle User`)
 
     // Trouver l'utilisateur par email
     console.log('🔍 Recherche utilisateur avec email:', email.toLowerCase())
-    const user = await User.findOne({ email: email.toLowerCase() })
+    const user = await UserModel.findOne({ email: email.toLowerCase() })
     console.log('🔍 User found:', user ? 'YES' : 'NO')
     if (user) {
+      const userDoc = user.toObject ? user.toObject() : user
       console.log('🔍 User details:', {
         id: user._id,
-        email: user.email,
-        plan: user.plan,
-        password_exists: !!user.password
+        email: (userDoc as any).email,
+        plan: (userDoc as any).plan,
+        password_exists: !!((userDoc as any).password || (userDoc as any).password_hash)
       })
     }
     if (!user) {
@@ -46,7 +51,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Vérifier le mot de passe
-    const passwordField = user.password || user.password_hash
+    const userDoc = user.toObject ? user.toObject() : user
+    const passwordField = (userDoc as any).password || (userDoc as any).password_hash
     console.log('🔑 Password field exists:', !!passwordField)
     if (!passwordField) {
       return NextResponse.json(
@@ -64,12 +70,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Mettre à jour la dernière connexion
-    user.last_login = new Date()
-    await user.save()
+    ;(user as any).last_login = new Date()
+    await (user as any).save()
 
       // Créer le token JWT
       const { generateToken } = await import('@/lib/auth')
-      const token = await generateToken(user)
+      const token = await generateToken(user as any)
 
     // Retourner la réponse sans le mot de passe
     return NextResponse.json({
@@ -77,13 +83,13 @@ export async function POST(req: NextRequest) {
       message: 'Connexion réussie',
       user: {
         id: user._id,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        email: user.email,
-        plan: user.plan,
-        subscription_status: user.subscription_status,
-        plan_expires_at: user.plan_expires_at,
-        isSubscribed: user.isSubscribed
+        firstName: (userDoc as any).first_name,
+        lastName: (userDoc as any).last_name,
+        email: (userDoc as any).email,
+        plan: (userDoc as any).plan,
+        subscription_status: (userDoc as any).subscription_status,
+        plan_expires_at: (userDoc as any).plan_expires_at,
+        isSubscribed: (userDoc as any).isSubscribed || false
       },
       token
     })
