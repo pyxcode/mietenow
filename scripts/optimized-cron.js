@@ -272,10 +272,31 @@ function generateEmailContent(listings, alert) {
 // Vérifier la connexion MongoDB avant de commencer
 async function verifyMongoConnection() {
   const forcedUri = forceMongoUri(MONGODB_URI)
-  const client = new MongoClient(forcedUri)
+  
+  // Options de connexion avec timeout plus long
+  const client = new MongoClient(forcedUri, {
+    serverSelectionTimeoutMS: 10000, // 10 secondes pour sélectionner le serveur
+    connectTimeoutMS: 10000, // 10 secondes pour établir la connexion
+    socketTimeoutMS: 30000, // 30 secondes pour les opérations socket
+    maxPoolSize: 1, // Une seule connexion pour le test
+    minPoolSize: 1
+  })
+  
   try {
     console.log('\n🔗 Vérification de la connexion MongoDB...')
-    await client.connect()
+    console.log(`   URI: ${forcedUri.replace(/:[^:@]+@/, ':****@')}`)
+    
+    // Connexion avec timeout
+    await Promise.race([
+      client.connect(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout after 15 seconds')), 15000)
+      )
+    ])
+    
+    // Test de ping pour vérifier que la connexion est vraiment active
+    await client.db('admin').command({ ping: 1 })
+    
     const db = client.db(DB_NAME)
     
     // VÉRIFICATION STRICTE
@@ -283,17 +304,33 @@ async function verifyMongoConnection() {
       throw new Error(`CRITICAL: Connected to "${db.databaseName}" instead of "${DB_NAME}"`)
     }
     
-    // Test simple : compter les listings
-    const listingsCount = await db.collection(COLLECTION_NAME).countDocuments().catch(() => 0)
+    // Test simple : compter les listings avec timeout
+    const listingsCount = await Promise.race([
+      db.collection(COLLECTION_NAME).countDocuments(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Count operation timeout')), 10000)
+      )
+    ]).catch(() => 0)
+    
     console.log(`✅ Connexion MongoDB OK - Base: ${db.databaseName}, Listings: ${listingsCount}`)
     
     return true
   } catch (error) {
     console.error(`❌ ÉCHEC connexion MongoDB: ${error.message}`)
     console.error(`   Le scraping OpenAI ne sera PAS exécuté pour éviter des coûts inutiles`)
+    
+    // Log supplémentaire pour debug
+    if (error.message.includes('closed') || error.message.includes('monitor')) {
+      console.error(`   Problème de réseau ou timeout - Vérifie que MongoDB Atlas est accessible`)
+    }
+    
     return false
   } finally {
-    await client.close()
+    try {
+      await client.close()
+    } catch (closeError) {
+      // Ignorer les erreurs de fermeture
+    }
   }
 }
 
