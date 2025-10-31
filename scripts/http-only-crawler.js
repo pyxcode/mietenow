@@ -68,8 +68,8 @@ class HttpOnlyCrawler {
     this.results = []
     this.errors = []
     
-    // MongoDB connection
-    this.mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URI2
+    // MongoDB connection - PRÉFÉRER MONGODB_URI2 comme dans optimized-cron.js
+    this.mongoUri = process.env.MONGODB_URI2 || process.env.MONGODB_URI
     this.dbName = 'mietenow-prod'
     this.collectionName = 'listings'
     this.mongoClient = null
@@ -189,8 +189,22 @@ class HttpOnlyCrawler {
       console.log(`🔗 Connecting to MongoDB - Database: ${this.dbName}`)
       console.log(`   URI: ${mongoUri.replace(/:[^:@]+@/, ':****@')}`)
       
-      this.mongoClient = new MongoClient(mongoUri)
-      await this.mongoClient.connect()
+      // Options de connexion avec timeout (identique à optimized-cron.js)
+      this.mongoClient = new MongoClient(mongoUri, {
+        serverSelectionTimeoutMS: 10000, // 10 secondes pour sélectionner le serveur
+        connectTimeoutMS: 10000, // 10 secondes pour établir la connexion
+        socketTimeoutMS: 30000, // 30 secondes pour les opérations socket
+        maxPoolSize: 10
+      })
+      
+      // Connexion avec timeout explicite
+      await Promise.race([
+        this.mongoClient.connect(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout after 15 seconds')), 15000)
+        )
+      ])
+      
       const db = this.mongoClient.db(this.dbName)
       
       // VÉRIFICATION: S'assurer qu'on utilise bien la bonne base
@@ -1953,9 +1967,21 @@ class HttpOnlyCrawler {
 
   /**
    * Save listing to MongoDB
+   * Vérifie et reconnecte automatiquement si la connexion est fermée
    */
   async saveListingToMongo(listing) {
+    // Si pas de connexion, reconnecter
+    if (!this.mongoCollection || !this.mongoClient) {
+      console.log(`   🔄 MongoDB déconnecté, reconnexion...`)
+      const reconnected = await this.connectMongo()
+      if (!reconnected) {
+        console.error(`   ❌ Impossible de reconnecter à MongoDB`)
+        return false
+      }
+    }
+
     if (!this.mongoCollection) {
+      console.error(`   ❌ MongoDB collection non disponible`)
       return false
     }
 
@@ -1988,6 +2014,45 @@ class HttpOnlyCrawler {
       }
     } catch (error) {
       console.error(`   ⚠️ Error saving listing to MongoDB: ${error.message}`)
+      // Si erreur de connexion, essayer de reconnecter une fois
+      if (error.message.includes('closed') || error.message.includes('connection') || error.message.includes('monitor')) {
+        console.log(`   🔄 Tentative de reconnexion après erreur...`)
+        try {
+          await this.disconnectMongo()
+          const reconnected = await this.connectMongo()
+          if (reconnected) {
+            // Réessayer une fois
+            try {
+              const existing = await this.mongoCollection.findOne({
+                $or: [
+                  { hash: listing.hash },
+                  { provider: listing.provider, external_id: listing.external_id }
+                ]
+              })
+              
+              if (existing) {
+                listing.updatedAt = new Date()
+                listing.last_seen_at = new Date()
+                listing.last_checked = new Date()
+                await this.mongoCollection.updateOne(
+                  { _id: existing._id },
+                  { $set: listing }
+                )
+                return 'updated'
+              } else {
+                await this.mongoCollection.insertOne(listing)
+                this.stats.savedToMongo++
+                return 'inserted'
+              }
+            } catch (retryError) {
+              console.error(`   ❌ Erreur lors de la nouvelle tentative: ${retryError.message}`)
+              return false
+            }
+          }
+        } catch (reconnectError) {
+          console.error(`   ❌ Impossible de reconnecter: ${reconnectError.message}`)
+        }
+      }
       return false
     }
   }
@@ -2152,6 +2217,12 @@ class HttpOnlyCrawler {
 
     // Use ONLY OpenAI for extraction - no fallbacks, no keywords
     let listingData = null
+    
+    // VÉRIFICATION CRITIQUE: Ne pas utiliser OpenAI si MongoDB n'est pas connecté
+    if (this.saveToMongo && !this.mongoCollection) {
+      console.log(`   ❌ MongoDB non connecté - ARRÊT du scraping pour éviter des coûts OpenAI inutiles`)
+      throw new Error('MongoDB not connected - Cannot use OpenAI if data cannot be saved')
+    }
     
     // Vérifier si le scraping OpenAI est activé
     const OPENAI_SCRAPING_ENABLED = process.env.OPENAI_SCRAPING_ENABLED !== 'false'
@@ -2525,9 +2596,12 @@ class HttpOnlyCrawler {
     console.log(`🚀 Starting HTTP-only crawl for: ${this.rootUrl}`)
     console.log('=' .repeat(60))
 
-    // Connect to MongoDB
+    // Connect to MongoDB - CRITIQUE: arrêter si échec
     if (this.saveToMongo) {
-      await this.connectMongo()
+      const mongoConnected = await this.connectMongo()
+      if (!mongoConnected) {
+        throw new Error('MongoDB connection failed - Cannot proceed with scraping as data cannot be saved')
+      }
     }
 
     // Find and validate the correct URL (especially for Kleinanzeigen)
