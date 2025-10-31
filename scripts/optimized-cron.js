@@ -14,14 +14,16 @@ import { checkAllWebsites } from './website-health-checker.js'
 import { MongoClient } from 'mongodb'
 import { sendEmail } from '../lib/sendgrid-esm.js'
 
-const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URI2
+// PRÉFÉRER MONGODB_URI2 qui est déjà en mongodb:// direct avec le bon hostname
+const MONGODB_URI = process.env.MONGODB_URI2 || process.env.MONGODB_URI
 const DB_NAME = 'mietenow-prod'
 const COLLECTION_NAME = 'listings'
 
 // Helper function to force MongoDB URI to mietenow-prod
+// IDENTIQUE à lib/mongodb-client.ts pour garantir la cohérence
 function forceMongoUri(originalUri) {
   if (!originalUri) {
-    throw new Error('MONGODB_URI environment variable is not defined')
+    throw new Error('MONGODB_URI or MONGODB_URI2 environment variable is not defined')
   }
 
   let uri = originalUri.trim().replace(/^['"]|['"]$/g, '')
@@ -31,16 +33,18 @@ function forceMongoUri(originalUri) {
     const match = uri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)?(\?.*)?/)
     if (match) {
       const [, username, password, host, , query] = match
+      // Utiliser le hostname du shard si disponible dans MONGODB_URI2
       const shardHost = process.env.MONGODB_URI2?.replace(/^['"]|['"]$/g, '').match(/@([^:]+):/)?.[1] || host
-      // Retirer directConnection=true
+      // Retirer directConnection=true pour permettre la connexion au replica set
       const cleanQuery = (query || '').replace(/[?&]directConnection=[^&]*/gi, '')
       uri = `mongodb://${username}:${password}@${shardHost}:27017/${DB_NAME}${cleanQuery || ''}`
     }
   } else {
+    // Pour mongodb://, extraire la base URI et forcer mietenow-prod
     const uriMatch = uri.match(/^(mongodb:\/\/[^\/]+)\/?([^?]*)(\?.*)?$/)
     if (uriMatch) {
       const [, baseUri, , query] = uriMatch
-      // Retirer directConnection=true
+      // Retirer directConnection=true pour permettre la connexion au replica set
       const cleanQuery = (query || '').replace(/[?&]directConnection=[^&]*/gi, '')
       uri = `${baseUri}/${DB_NAME}${cleanQuery || ''}`
     }
@@ -51,6 +55,7 @@ function forceMongoUri(originalUri) {
     uri = uri.replace(/\/test(\?|$)/, `/${DB_NAME}$1`)
   }
 
+  // S'assurer que mietenow-prod est dans l'URI
   if (!uri.includes(`/${DB_NAME}`)) {
     if (uri.includes('/?')) {
       uri = uri.replace('/?', `/${DB_NAME}?`)
@@ -270,8 +275,14 @@ function generateEmailContent(listings, alert) {
 }
 
 // Vérifier la connexion MongoDB avant de commencer
+// Utilise la MÊME logique que lib/mongodb-client.ts pour garantir la cohérence
 async function verifyMongoConnection() {
+  // Utiliser la même URI que celle qui fonctionne dans les autres scripts
   const forcedUri = forceMongoUri(MONGODB_URI)
+  
+  console.log('\n🔗 Vérification de la connexion MongoDB...')
+  console.log(`   URI utilisée: ${forcedUri.replace(/:[^:@]+@/, ':****@')}`)
+  console.log(`   Base attendue: ${DB_NAME}`)
   
   // Options de connexion avec timeout plus long
   const client = new MongoClient(forcedUri, {
@@ -283,9 +294,6 @@ async function verifyMongoConnection() {
   })
   
   try {
-    console.log('\n🔗 Vérification de la connexion MongoDB...')
-    console.log(`   URI: ${forcedUri.replace(/:[^:@]+@/, ':****@')}`)
-    
     // Connexion avec timeout
     await Promise.race([
       client.connect(),
@@ -297,31 +305,48 @@ async function verifyMongoConnection() {
     // Test de ping pour vérifier que la connexion est vraiment active
     await client.db('admin').command({ ping: 1 })
     
+    // Utiliser explicitement la base mietenow-prod
     const db = client.db(DB_NAME)
     
-    // VÉRIFICATION STRICTE
-    if (db.databaseName !== DB_NAME) {
-      throw new Error(`CRITICAL: Connected to "${db.databaseName}" instead of "${DB_NAME}"`)
+    // VÉRIFICATION STRICTE : S'assurer qu'on utilise bien la bonne base
+    // Note: db.databaseName peut ne pas refléter la vraie base si on utilise client.db(DB_NAME)
+    // Donc on fait plutôt un test de connexion réel
+    const adminDb = client.db('admin')
+    const serverStatus = await adminDb.command({ serverStatus: 1 }).catch(() => null)
+    
+    if (!serverStatus) {
+      throw new Error('Cannot verify server connection')
     }
     
-    // Test simple : compter les listings avec timeout
+    // Test simple : compter les listings avec timeout pour vérifier l'accès à mietenow-prod
     const listingsCount = await Promise.race([
-      db.collection(COLLECTION_NAME).countDocuments(),
+      db.collection(COLLECTION_NAME).countDocuments({}),
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Count operation timeout')), 10000)
       )
-    ]).catch(() => 0)
+    ]).catch(() => {
+      // Si on ne peut pas compter, c'est peut-être qu'on n'est pas sur la bonne base
+      throw new Error(`Cannot access collection "${COLLECTION_NAME}" in database "${DB_NAME}"`)
+    })
     
-    console.log(`✅ Connexion MongoDB OK - Base: ${db.databaseName}, Listings: ${listingsCount}`)
+    console.log(`✅ Connexion MongoDB OK - Base: ${DB_NAME}, Listings: ${listingsCount}`)
+    console.log(`   ✅ Accès à la base "${DB_NAME}" confirmé`)
     
     return true
   } catch (error) {
     console.error(`❌ ÉCHEC connexion MongoDB: ${error.message}`)
+    console.error(`   URI testée: ${forcedUri.replace(/:[^:@]+@/, ':****@')}`)
+    console.error(`   Base attendue: ${DB_NAME}`)
     console.error(`   Le scraping OpenAI ne sera PAS exécuté pour éviter des coûts inutiles`)
     
     // Log supplémentaire pour debug
     if (error.message.includes('closed') || error.message.includes('monitor')) {
-      console.error(`   Problème de réseau ou timeout - Vérifie que MongoDB Atlas est accessible`)
+      console.error(`   ⚠️  Problème de connexion réseau - Vérifie que MongoDB Atlas est accessible`)
+      console.error(`   ⚠️  Vérifie que l'IP du serveur Render est whitelistée dans MongoDB Atlas`)
+    } else if (error.message.includes('timeout')) {
+      console.error(`   ⚠️  Timeout de connexion - Vérifie la connectivité réseau`)
+    } else if (error.message.includes('Cannot access collection')) {
+      console.error(`   ⚠️  Problème d'accès à la base "${DB_NAME}" - Vérifie les permissions`)
     }
     
     return false
