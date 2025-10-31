@@ -269,6 +269,34 @@ function generateEmailContent(listings, alert) {
   return html
 }
 
+// Vérifier la connexion MongoDB avant de commencer
+async function verifyMongoConnection() {
+  const forcedUri = forceMongoUri(MONGODB_URI)
+  const client = new MongoClient(forcedUri)
+  try {
+    console.log('\n🔗 Vérification de la connexion MongoDB...')
+    await client.connect()
+    const db = client.db(DB_NAME)
+    
+    // VÉRIFICATION STRICTE
+    if (db.databaseName !== DB_NAME) {
+      throw new Error(`CRITICAL: Connected to "${db.databaseName}" instead of "${DB_NAME}"`)
+    }
+    
+    // Test simple : compter les listings
+    const listingsCount = await db.collection(COLLECTION_NAME).countDocuments().catch(() => 0)
+    console.log(`✅ Connexion MongoDB OK - Base: ${db.databaseName}, Listings: ${listingsCount}`)
+    
+    return true
+  } catch (error) {
+    console.error(`❌ ÉCHEC connexion MongoDB: ${error.message}`)
+    console.error(`   Le scraping OpenAI ne sera PAS exécuté pour éviter des coûts inutiles`)
+    return false
+  } finally {
+    await client.close()
+  }
+}
+
 async function runOptimizedCron() {
   // Vérifier si le scraping OpenAI est activé
   const OPENAI_SCRAPING_ENABLED = process.env.OPENAI_SCRAPING_ENABLED !== 'false'
@@ -278,8 +306,16 @@ async function runOptimizedCron() {
     console.log('   Pour réactiver, définissez OPENAI_SCRAPING_ENABLED=true dans les variables d\'environnement')
     return
   }
+  
   console.log('\n🚀 Starting Optimized Cron Job...')
   console.log(`📅 ${new Date().toISOString()}`)
+  
+  // VÉRIFICATION CRITIQUE: Connexion MongoDB avant de commencer
+  const mongoConnected = await verifyMongoConnection()
+  if (!mongoConnected) {
+    console.error('\n❌ ARRÊT: Connexion MongoDB échouée - Scraping OpenAI annulé pour éviter des coûts inutiles')
+    throw new Error('MongoDB connection failed - Scraping cancelled to avoid unnecessary OpenAI costs')
+  }
   
   try {
     // First, check website health
