@@ -203,6 +203,14 @@ function generateEmailContent(listings, alert) {
 }
 
 async function runOptimizedCron() {
+  // Vérifier si le scraping OpenAI est activé
+  const OPENAI_SCRAPING_ENABLED = process.env.OPENAI_SCRAPING_ENABLED !== 'false'
+  
+  if (!OPENAI_SCRAPING_ENABLED) {
+    console.log('⏸️  Scraping OpenAI est désactivé (OPENAI_SCRAPING_ENABLED=false)')
+    console.log('   Pour réactiver, définissez OPENAI_SCRAPING_ENABLED=true dans les variables d\'environnement')
+    return
+  }
   console.log('\n🚀 Starting Optimized Cron Job...')
   console.log(`📅 ${new Date().toISOString()}`)
   

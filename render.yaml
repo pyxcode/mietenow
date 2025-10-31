@@ -55,6 +55,9 @@ services:
       sync: false
     - key: SENDGRID_FROM_EMAIL
       sync: false
+    - key: OPENAI_SCRAPING_ENABLED
+      sync: false
+      description: "Activer/désactiver le scraping OpenAI (true/false, défaut: true)"
 
 # 🧹 Cron Job - Database Cleanup Every Night at 2 AM
 - type: cron

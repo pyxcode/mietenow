@@ -235,11 +235,16 @@ function BreakdownChart({ data, type }: { data: AnalyticsData; type: 'byType' | 
       <div className="space-y-3">
         {items.map((item, index) => {
           const percentage = total > 0 ? (item.count / total) * 100 : 0
+          // Type-safe access to the label property
+          const label = type === 'byType' 
+            ? (item as { type: string; count: number }).type
+            : (item as { provider: string; count: number }).provider
+          
           return (
-            <div key={item[type === 'byType' ? 'type' : 'provider']}>
+            <div key={label}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium capitalize">
-                  {item[type === 'byType' ? 'type' : 'provider']}
+                  {label}
                 </span>
                 <span className="text-sm text-gray-600">
                   {item.count} ({percentage.toFixed(1)}%)

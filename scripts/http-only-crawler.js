@@ -2135,7 +2135,15 @@ class HttpOnlyCrawler {
     // Use ONLY OpenAI for extraction - no fallbacks, no keywords
     let listingData = null
     
+    // Vérifier si le scraping OpenAI est activé
+    const OPENAI_SCRAPING_ENABLED = process.env.OPENAI_SCRAPING_ENABLED !== 'false'
+    
     if (response.bodyText) {
+      if (!OPENAI_SCRAPING_ENABLED) {
+        console.log(`   ⏸️  OpenAI scraping désactivé - skipping this listing`)
+        return null
+      }
+      
       const openAIExtractor = await loadOpenAIExtractor()
         if (openAIExtractor) {
           console.log(`   🤖 Using OpenAI to extract ALL information from HTML...`)
