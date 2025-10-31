@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
     // Utiliser l'ID de l'utilisateur passé en paramètre
     const userObjectId = new mongoose.Types.ObjectId(userId)
     
-    console.log(`📊 Using database: ${db.databaseName}`)
     if (!db) {
       throw new Error('Database connection not established')
     }
+    console.log(`📊 Using database: ${db.databaseName}`)
     const usersCollection = db.collection('users')
     
     const user = await usersCollection.findOne({ _id: userObjectId })
