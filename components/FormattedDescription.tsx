@@ -24,8 +24,9 @@ export default function FormattedDescription({ description, className = '' }: Fo
   }
 
   // Structured format: parse sections
-  const sections: Array<{ title?: string; content: string[] }> = []
-  let currentSection: { title?: string; content: string[] } | null = null
+  type Section = { title?: string; content: string[] }
+  const sections: Section[] = []
+  let currentSection: Section | null = null
 
   lines.forEach(line => {
     const trimmed = line.trim()
@@ -52,7 +53,7 @@ export default function FormattedDescription({ description, className = '' }: Fo
   })
 
   // Add last section
-  if (currentSection && currentSection.content.length > 0) {
+  if (currentSection !== null && currentSection.content.length > 0) {
     sections.push(currentSection)
   }
 
