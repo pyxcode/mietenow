@@ -21,7 +21,7 @@ export async function GET() {
     }
     
     // Utiliser getUserModel() qui garantit mietenow-prod
-    const UserModel = getUserModel()
+    const UserModel = await getUserModel()
     const users = await UserModel.find({}).limit(3)
     
     return NextResponse.json({
