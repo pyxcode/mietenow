@@ -153,7 +153,7 @@ async function scrapeWebsite(site) {
       }
     }
     
-    globalStats.websiteStats[site.provider].totalScraped += result.totalScraped || 0
+    globalStats.websiteStats[site.provider].totalScraped += result.totalScraped || 0 // commentaire
     globalStats.websiteStats[site.provider].totalNew += result.totalNew || 0
     globalStats.websiteStats[site.provider].totalErrors += result.totalErrors || 0
     globalStats.websiteStats[site.provider].lastScrape = new Date().toISOString()
