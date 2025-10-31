@@ -31,7 +31,7 @@ const COLLECTION_NAME = 'listings'
 
 // Smart rate limiting configuration
 const RATE_LIMITS = {
-  // OpenAI rate limits: ~3000 requests/minute for gpt-4o-mini
+  // OpenAI rate limits: ~3000 requests/minute for gpt-4.1-nano
   maxOpenAICallsPerMinute: 50, // Conservative limit
   maxOpenAICallsPerHour: 2000, // Stay well under limit
   delayBetweenSites: 30000, // 30 seconds between sites

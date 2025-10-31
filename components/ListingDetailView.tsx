@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, MapPin, Home, Calendar, ChevronLeft, ChevronRight, Users, Bed, Square, Building, ExternalLink } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import FormattedDescription from './FormattedDescription'
 
 interface Listing {
   id: string
@@ -230,11 +231,9 @@ export default function ListingDetailView({ listing, onBack }: ListingDetailView
               <h3 className="text-lg font-bold text-gray-900 mb-3">
                 {language === 'de' ? 'Beschreibung' : 'Description'}
               </h3>
-              <div className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words bg-gray-50 p-4 rounded-xl">
+              <div className="bg-gray-50 p-6 rounded-xl">
                 {listing.description && (
-                  <p className="whitespace-pre-line text-gray-700 mt-4">
-                    {listing.description}
-                  </p>
+                  <FormattedDescription description={listing.description} />
                 )}
               </div>
             </div>

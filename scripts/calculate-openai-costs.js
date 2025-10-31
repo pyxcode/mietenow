@@ -3,10 +3,10 @@
 /**
  * Calculate OpenAI API Costs
  * 
- * Calcule le coût réel d'utilisation de GPT-4o-mini pour le scraping
+ * Calcule le coût réel d'utilisation de GPT-4.1-nano pour le scraping
  */
 
-// Prix GPT-4o-mini (d'après OpenAI, décembre 2024)
+// Prix GPT-4.1-nano (à mettre à jour selon les tarifs OpenAI)
 const PRICING = {
   input: 0.15 / 1000000,   // $0.15 par million de tokens d'entrée
   output: 0.60 / 1000000,  // $0.60 par million de tokens de sortie
@@ -86,7 +86,7 @@ const SCENARIOS = {
 }
 
 function main() {
-  console.log('💰 CALCUL DES COÛTS OpenAI GPT-4o-mini\n')
+  console.log('💰 CALCUL DES COÛTS OpenAI GPT-4.1-nano\n')
   console.log('=' .repeat(70))
   
   const costPerCall = calculateCostPerCall()
@@ -118,7 +118,7 @@ function main() {
   console.log('='.repeat(70))
   console.log('1. 1 appel GPT par annonce = beaucoup d\'appels si tu scrapes beaucoup')
   console.log('2. Chaque appel envoie ~120k caractères de HTML (30k tokens)')
-  console.log('3. Même si GPT-4o-mini est moins cher, le volume fait monter la facture')
+  console.log('3. Même si GPT-4.1-nano est moins cher, le volume fait monter la facture')
   console.log('4. Limite configurée: jusqu\'à 2000 appels/heure possible')
   console.log('')
   console.log('💡 OPTIMISATIONS POSSIBLES:')

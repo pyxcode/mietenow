@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, MapPin, Euro, Home, Calendar, ExternalLink, Share2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import Image from 'next/image'
+import FormattedDescription from '@/components/FormattedDescription'
 
 interface Listing {
   id: string
@@ -221,9 +222,11 @@ export default function ListingPage() {
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">
                   {language === 'de' ? 'Beschreibung' : 'Description'}
                 </h2>
-                <p className="text-gray-700 leading-relaxed">
-                  {listing.description}
-                </p>
+                <div className="bg-gray-50 p-6 rounded-xl">
+                  {listing.description && (
+                    <FormattedDescription description={listing.description} />
+                  )}
+                </div>
               </div>
 
               {/* Détails */}
