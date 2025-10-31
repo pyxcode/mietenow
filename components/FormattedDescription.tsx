@@ -37,10 +37,9 @@ export default function FormattedDescription({ description, className = '' }: Fo
     // Detect section title (=== TITLE === or TITLE:)
     if (trimmed.startsWith('===') || trimmed.match(/^[A-Z\s]+:$/)) {
       // Save previous section
-      if (currentSection) {
-        if (currentSection.content.length > 0) {
-          sections.push(currentSection)
-        }
+      const prevSection = currentSection
+      if (prevSection && prevSection.content.length > 0) {
+        sections.push(prevSection)
       }
       
       // Start new section
@@ -60,9 +59,10 @@ export default function FormattedDescription({ description, className = '' }: Fo
   })
 
   // Add last section
-  if (currentSection) {
-    if (currentSection.content.length > 0) {
-      sections.push(currentSection)
+  if (currentSection !== null) {
+    const sectionToAdd: Section = currentSection
+    if (sectionToAdd.content.length > 0) {
+      sections.push(sectionToAdd)
     }
   }
 
