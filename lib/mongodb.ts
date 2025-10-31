@@ -84,13 +84,22 @@ async function connectDB() {
 
   try {
     cached.conn = await cached.promise
-    const dbName = (cached.conn as any)?.db?.databaseName || mongoose.connection.db?.databaseName || 'unknown'
-    console.log(`✅ Connecté à MongoDB - Base: ${dbName}`)
-    if (dbName !== DB_NAME) {
-      console.error(`⚠️ ATTENTION: Base de données incorrecte! Attendu: ${DB_NAME}, Obtenu: ${dbName}`)
-      // Forcer l'utilisation de la bonne base
-      mongoose.connection.useDb(DB_NAME)
-      console.log(`✅ Base de données changée pour: ${DB_NAME}`)
+    
+    // FORCER immédiatement l'utilisation de mietenow-prod
+    mongoose.connection.useDb(DB_NAME)
+    
+    const dbName = mongoose.connection.db?.databaseName || 'unknown'
+    const connectionName = mongoose.connection.name || 'unknown'
+    
+    console.log(`✅ Connecté à MongoDB`)
+    console.log(`   - Base de données: ${dbName}`)
+    console.log(`   - Nom de connexion: ${connectionName}`)
+    
+    if (dbName !== DB_NAME || connectionName !== DB_NAME) {
+      console.error(`⚠️ ATTENTION: Base incorrecte! Attendu: ${DB_NAME}, Base: ${dbName}, Connexion: ${connectionName}`)
+      // Forcer à nouveau
+      const forcedConnection = mongoose.connection.useDb(DB_NAME)
+      console.log(`✅ Base forcée à: ${forcedConnection.db?.databaseName || DB_NAME}`)
     }
   } catch (e) {
     cached.promise = null

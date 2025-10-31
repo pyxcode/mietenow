@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import connectDB from '@/lib/mongodb'
+import mongoose from 'mongoose'
 import { User } from '@/models'
 import bcrypt from 'bcryptjs'
 
@@ -20,6 +21,11 @@ const handler = NextAuth({
         try {
           await connectDB()
           
+          // Forcer l'utilisation de mietenow-prod
+          const connection = mongoose.connection.useDb('mietenow-prod')
+          console.log(`🔐 NextAuth - Base de données: ${connection.db?.databaseName || 'unknown'}`)
+          
+          // Utiliser la connexion forcée pour chercher l'utilisateur
           const user = await User.findOne({ email: credentials.email.toLowerCase() })
           
           if (!user) {

@@ -61,7 +61,8 @@ export function forceMongoUri(originalUri: string | undefined): string {
  * Crée un client MongoDB connecté à mietenow-prod
  */
 export async function createMongoClient(): Promise<MongoClient> {
-  const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URI2
+  // Préférer MONGODB_URI2 qui est déjà en mongodb:// direct avec le bon hostname
+  const MONGODB_URI = process.env.MONGODB_URI2 || process.env.MONGODB_URI
   const forcedUri = forceMongoUri(MONGODB_URI)
   
   console.log(`🔗 Connexion MongoDB forcée vers: ${DB_NAME}`)
