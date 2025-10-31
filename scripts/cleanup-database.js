@@ -16,7 +16,7 @@ import { config } from 'dotenv'
 config({ path: '.env.local' })
 
 import { MongoClient } from 'mongodb'
-import { writeFileSync } from 'fs'
+import { writeFileSync, mkdirSync } from 'fs'
 
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URI2
 const DB_NAME = 'mietenow-prod'
@@ -29,10 +29,13 @@ let stats = {
   removed: 0,
   errors: 0,
   reasons: {
-    notFound: 0,
+    notFound: 0,    // Only real 404 errors
     invalid: 0,
     old: 0
-  }
+  },
+  statusCodes: {},  // Track all HTTP status codes encountered
+  skippedTemporary: 0,  // Count of listings skipped due to temporary errors (503, 500, etc.)
+  removedListings: []  // Store removed listings for verification
 }
 
 // Check if a listing URL is still accessible
@@ -134,6 +137,8 @@ async function cleanupDatabase() {
         
         let shouldRemove = false
         let reason = ''
+        let httpStatus = null
+        let httpError = null
         
         // Check if listing is valid
         if (!isValidListing(listing)) {
@@ -150,16 +155,50 @@ async function cleanupDatabase() {
         // Check if URL is still accessible
         else if (listing.url_source) {
           const urlCheck = await checkListingUrl(listing.url_source)
+          
+          httpStatus = urlCheck.status
+          httpError = urlCheck.error
+          
+          // Track status code statistics
+          const statusCode = urlCheck.status || 'error'
+          stats.statusCodes[statusCode] = (stats.statusCodes[statusCode] || 0) + 1
+          
           if (!urlCheck.accessible) {
-            shouldRemove = true
-            reason = 'notFound'
-            stats.reasons.notFound++
-            console.log(`     ❌ URL not accessible: ${urlCheck.status} ${urlCheck.error || ''}`)
+            // Only remove if it's a real 404 (not found)
+            // Don't remove for temporary errors like 503 (Service Unavailable), 500 (Server Error), etc.
+            if (urlCheck.status === 404) {
+              shouldRemove = true
+              reason = 'notFound'
+              stats.reasons.notFound++
+              console.log(`     ❌ URL not found (404): ${listing.url_source}`)
+            } else if (urlCheck.status >= 500 || urlCheck.status === 503) {
+              // Temporary server error - skip removal
+              stats.skippedTemporary++
+              console.log(`     ⚠️  Temporary error (${urlCheck.status}) - keeping listing: ${listing.url_source}`)
+            } else if (urlCheck.status === 0 || urlCheck.error) {
+              // Network/timeout error - skip removal
+              stats.skippedTemporary++
+              console.log(`     ⚠️  Network error - keeping listing: ${urlCheck.error || 'timeout'}`)
+            } else {
+              // Other client errors (403, 401, etc.) - skip removal to be safe
+              stats.skippedTemporary++
+              console.log(`     ⚠️  Client error (${urlCheck.status}) - keeping listing`)
+            }
           }
         }
         
         if (shouldRemove) {
           try {
+            // Store listing info before deletion
+            stats.removedListings.push({
+              title: listing.title,
+              url: listing.url_source,
+              reason: reason,
+              httpStatus: httpStatus,
+              httpError: httpError,
+              removedAt: new Date().toISOString()
+            })
+            
             await collection.deleteOne({ _id: listing._id })
             stats.removed++
             console.log(`     🗑️  Removed (${reason}): ${listing.title?.substring(0, 30)}...`)
@@ -188,18 +227,52 @@ async function cleanupDatabase() {
     console.log(`Errors: ${stats.errors}`)
     console.log(`Duration: ${Math.round(stats.duration / 1000)}s`)
     console.log('\nReasons for removal:')
-    console.log(`  - Not found (404): ${stats.reasons.notFound}`)
+    console.log(`  - Not found (404 only): ${stats.reasons.notFound}`)
     console.log(`  - Invalid data: ${stats.reasons.invalid}`)
     console.log(`  - Too old (>90 days): ${stats.reasons.old}`)
+    console.log(`\n⚠️  Skipped (temporary errors): ${stats.skippedTemporary}`)
+    console.log('\nHTTP Status codes encountered:')
+    Object.entries(stats.statusCodes)
+      .sort((a, b) => b[1] - a[1])  // Sort by count descending
+      .forEach(([code, count]) => {
+        const emoji = code === '200' ? '✅' : code === '404' ? '❌' : code === '503' ? '⚠️' : '🔍'
+        console.log(`  ${emoji} ${code}: ${count}`)
+      })
     
-    // Save cleanup report
+    // Ensure logs directory exists
+    const logsDir = 'logs'
+    try {
+      mkdirSync(logsDir, { recursive: true })
+    } catch (error) {
+      // Directory might already exist
+    }
+    
+    // Save cleanup report with full details
     const report = {
       timestamp: stats.startTime.toISOString(),
       ...stats
     }
     
-    writeFileSync('logs/cleanup-report.json', JSON.stringify(report, null, 2))
-    console.log('\n📄 Cleanup report saved to logs/cleanup-report.json')
+    const reportPath = `${logsDir}/cleanup-report.json`
+    writeFileSync(reportPath, JSON.stringify(report, null, 2))
+    console.log(`\n📄 Cleanup report saved to ${reportPath}`)
+    
+    // Save removed listings URLs in a simple text file for easy verification
+    if (stats.removedListings.length > 0) {
+      const urlsPath = `${logsDir}/removed-listings-urls.txt`
+      const urlsText = stats.removedListings
+        .map(listing => `# ${listing.title}\n# Reason: ${listing.reason} | HTTP Status: ${listing.httpStatus || 'N/A'}\n${listing.url}\n`)
+        .join('\n')
+      
+      writeFileSync(urlsPath, urlsText)
+      console.log(`📋 Removed listings URLs saved to ${urlsPath}`)
+      console.log(`   ${stats.removedListings.length} URLs saved for manual verification`)
+      
+      // Also save detailed JSON of removed listings
+      const removedListingsPath = `${logsDir}/removed-listings-details.json`
+      writeFileSync(removedListingsPath, JSON.stringify(stats.removedListings, null, 2))
+      console.log(`📋 Detailed removed listings saved to ${removedListingsPath}`)
+    }
     
   } catch (error) {
     console.error('❌ Database cleanup failed:', error.message)

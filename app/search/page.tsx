@@ -233,7 +233,14 @@ export default function SearchPage() {
         
         const listingsData = await listingsResponse.json()
         
-        if (listingsData.success) {
+        console.log('📊 API Response:', {
+          success: listingsData.success,
+          listingsCount: listingsData.data?.listings?.length || 0,
+          totalFound: listingsData.data?.totalFound || 0
+        })
+        
+        if (listingsData.success && listingsData.data?.listings) {
+          console.log(`✅ Received ${listingsData.data.listings.length} listings from API`)
           // Transformer les données de l'API vers le format attendu par le composant
           const transformedListings: Listing[] = listingsData.data.listings.map((listing: any) => ({
             id: listing._id || listing.id,

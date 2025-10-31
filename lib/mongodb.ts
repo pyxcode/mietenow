@@ -1,31 +1,37 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URI2 || 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
+const DB_NAME = 'mietenow-prod'
 
-// Fonction pour obtenir l'URI MongoDB
+// Fonction pour obtenir l'URI MongoDB avec la bonne base de données
 const getMongoUri = () => {
   if (!MONGODB_URI) {
     throw new Error('MONGODB_URI environment variable is not defined')
   }
   
-  // Utiliser l'URI directe si disponible, sinon convertir mongodb+srv
-  if (MONGODB_URI.includes('mongodb://')) {
-    return MONGODB_URI
-  }
+  let uri = MONGODB_URI
   
   // Si c'est une URI mongodb+srv://, la convertir en mongodb:// direct pour éviter les problèmes DNS
-  if (MONGODB_URI.includes('mongodb+srv://')) {
+  if (uri.includes('mongodb+srv://')) {
     // Extraire les composants de l'URI
-    const match = MONGODB_URI.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)(\?.*)?/)
+    const match = uri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)?(\?.*)?/)
     if (match) {
       const [, username, password, host, database, query] = match
       // Convertir en URI direct (utilise le premier shard disponible)
-      const directUri = `mongodb://${username}:${password}@${host}:27017/${database}${query || ''}`
-      return directUri
+      uri = `mongodb://${username}:${password}@${host}:27017/${database || DB_NAME}${query || ''}`
     }
   }
   
-  return MONGODB_URI
+  // S'assurer que la base de données est dans l'URI
+  if (uri.includes('/?') || uri.endsWith('/')) {
+    // Pas de DB spécifiée, ajouter mietenow-prod
+    uri = uri.replace(/\/(\?|$)/, `/${DB_NAME}$1`)
+  } else if (!uri.match(/\/[^/]+(\?|$)/)) {
+    // Vérifier si une DB est spécifiée
+    uri = uri.replace(/\/$/, `/${DB_NAME}`)
+  }
+  
+  return uri
 }
 
 if (!MONGODB_URI) {

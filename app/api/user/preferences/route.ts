@@ -14,16 +14,35 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔍 API GET /api/user/preferences appelée')
     
-    // Connexion directe à MongoDB
-    const MONGODB_URI = 'mongodb://louanbardou_db_user:1Hdkkeb8205eE@ac-zdt3xyl-shard-00-00.6srfa0f.mongodb.net:27017/?authSource=admin&ssl=true&directConnection=true'
-    await mongoose.connect(MONGODB_URI)
+    await connectDB()
     console.log('✅ Connecté à MongoDB')
     
-    // Récupérer l'ID utilisateur depuis les headers ou le body
-    const userId = request.headers.get('x-user-id') || (await request.json()).userId
+    // Récupérer l'ID utilisateur depuis les headers ou les query params
+    const userId = request.headers.get('x-user-id') || 
+                   new URL(request.url).searchParams.get('userId')
     
     if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+      // Si pas d'userId, retourner des préférences par défaut
+      return NextResponse.json({ 
+        success: true, 
+        data: {
+          search_preferences: {
+            city: 'Berlin',
+            max_price: 1500,
+            type: 'Any',
+            districts: [],
+            furnishing: 'Any',
+            address: '',
+            radius: 5,
+            coordinates: {},
+            min_bedrooms: 0,
+            min_surface: 0,
+            max_surface: 0
+          },
+          onboarding_completed: false,
+          current_step: null
+        }
+      })
     }
     
     const user_id = new mongoose.Types.ObjectId(userId)
