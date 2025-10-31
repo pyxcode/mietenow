@@ -24,7 +24,10 @@ export default function FormattedDescription({ description, className = '' }: Fo
   }
 
   // Structured format: parse sections
-  type Section = { title?: string; content: string[] }
+  interface Section {
+    title?: string
+    content: string[]
+  }
   const sections: Section[] = []
   let currentSection: Section | null = null
 
@@ -34,27 +37,33 @@ export default function FormattedDescription({ description, className = '' }: Fo
     // Detect section title (=== TITLE === or TITLE:)
     if (trimmed.startsWith('===') || trimmed.match(/^[A-Z\s]+:$/)) {
       // Save previous section
-      if (currentSection && currentSection.content.length > 0) {
-        sections.push(currentSection)
+      if (currentSection) {
+        if (currentSection.content.length > 0) {
+          sections.push(currentSection)
+        }
       }
       
       // Start new section
       const title = trimmed.replace(/^===*\s*/, '').replace(/\s*===*$/, '').replace(/:$/, '')
       currentSection = { title, content: [] }
-    } else if (currentSection) {
-      currentSection.content.push(line)
     } else {
-      // Content before any section
-      if (sections.length === 0 || sections[sections.length - 1].title) {
-        sections.push({ content: [] })
+      if (currentSection) {
+        currentSection.content.push(line)
+      } else {
+        // Content before any section
+        if (sections.length === 0 || sections[sections.length - 1].title) {
+          sections.push({ content: [] })
+        }
+        sections[sections.length - 1].content.push(line)
       }
-      sections[sections.length - 1].content.push(line)
     }
   })
 
   // Add last section
-  if (currentSection !== null && currentSection.content.length > 0) {
-    sections.push(currentSection)
+  if (currentSection) {
+    if (currentSection.content.length > 0) {
+      sections.push(currentSection)
+    }
   }
 
   // If no sections were detected properly, just display normally
