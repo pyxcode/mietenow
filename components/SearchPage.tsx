@@ -131,6 +131,110 @@ export default function SearchPage() {
     return R * c
   }
 
+  // Fonction pour créer automatiquement une alerte à partir des préférences
+  const createAlertFromPreferences = useCallback(async (prefs: any) => {
+    if (!user) {
+      console.log('⚠️ Cannot create alert: user not logged in')
+      return
+    }
+
+    if (!user.email) {
+      console.error('❌ Cannot create alert: user email is missing', user)
+      return
+    }
+
+    try {
+      const alertData = {
+        title: `Alert for ${prefs.city || 'Berlin'} - ${prefs.type || 'Any'}`,
+        criteria: {
+          city: prefs.city || 'Berlin',
+          type: prefs.type || 'Any',
+          max_price: prefs.max_price || 10000,
+          min_price: prefs.min_price || 0,
+          min_surface: prefs.min_surface || 0,
+          min_bedrooms: prefs.min_bedrooms || 0,
+          furnishing: prefs.furnishing || 'Any',
+          address: prefs.address || '',
+          radius: prefs.radius || 5
+        },
+        frequency: 'daily',
+        email: user.email
+      }
+
+      console.log('📧 Creating alert from preferences:', {
+        email: user.email,
+        criteria: alertData.criteria
+      })
+
+      const response = await fetch('/api/alerts/simple', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(alertData)
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Alert created/updated successfully:', data)
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('❌ Failed to create alert from preferences:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
+      }
+    } catch (error) {
+      console.error('❌ Error creating alert from preferences:', error)
+    }
+  }, [user, language])
+
+  // Fonction helper pour charger les préférences depuis localStorage
+  const loadPreferencesFromLocalStorage = (): any | null => {
+    try {
+      const tempPrefs = localStorage.getItem('temp_preferences')
+      if (tempPrefs) {
+        const parsed = JSON.parse(tempPrefs)
+        if (parsed.preferences) {
+          console.log('📥 Préférences chargées depuis localStorage (fallback):', parsed.preferences)
+          return parsed.preferences
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading preferences from localStorage:', error)
+    }
+    return null
+  }
+
+  // Fonction helper pour appliquer les préférences aux critères de recherche
+  const applyPreferencesToSearchCriteria = useCallback((prefs: any, source: 'API' | 'localStorage') => {
+    console.log(`🔧 Application des préférences depuis ${source}:`, prefs)
+    
+    const newCriteria = {
+      city: prefs.city || 'Berlin',
+      minPrice: prefs.min_price?.toString() || '',
+      maxPrice: prefs.max_price?.toString() || '',
+      minSize: prefs.min_surface?.toString() || '',
+      type: (prefs.type || 'Any') as 'Any' | 'Room' | 'Studio' | 'Apartment' | 'House',
+      furnishing: (prefs.furnishing || 'Any') as 'Any' | 'Furnished' | 'Unfurnished',
+      minBedrooms: prefs.min_bedrooms?.toString() || '',
+      address: prefs.address || '',
+      radius: prefs.radius || 5,
+    }
+    
+    setSearchCriteria(newCriteria)
+    
+    // Activer l'alerte par défaut si l'utilisateur a des préférences
+    if (prefs.address || prefs.min_price || prefs.max_price || prefs.type !== 'Any' || prefs.furnishing !== 'Any') {
+      setIsAlertActive(true)
+      setAlertButtonText(language === 'de' ? 'Alerte aktualisieren' : 'Update alert')
+      
+      // Créer automatiquement l'alerte avec les préférences
+      createAlertFromPreferences(prefs)
+    }
+  }, [language, createAlertFromPreferences])
+
   // Protection d'authentification
   useEffect(() => {
     if (!authLoading && !user) {
@@ -202,31 +306,50 @@ export default function SearchPage() {
         }
         
         // Appliquer les préférences utilisateur si disponibles
+        let preferencesApplied = false
+        
         if (preferencesResponse && preferencesResponse.ok) {
           const preferencesData = await preferencesResponse.json()
           if (preferencesData.success && preferencesData.data.search_preferences) {
             const prefs = preferencesData.data.search_preferences
-            setSearchCriteria({
-              city: prefs.city || 'Berlin',
-              minPrice: prefs.min_price?.toString() || '',
-              maxPrice: prefs.max_price?.toString() || '',
-              minSize: prefs.min_surface?.toString() || '',
-              type: prefs.type || 'Any',
-              furnishing: prefs.furnishing || 'Any',
-              minBedrooms: prefs.min_bedrooms?.toString() || '',
-              address: prefs.address || '',
-              radius: prefs.radius || 5,
-            })
+            // Vérifier si les préférences ne sont pas vides (pas seulement des valeurs par défaut)
+            const hasValidPreferences = prefs.address || 
+                                      prefs.min_price || 
+                                      prefs.max_price || 
+                                      prefs.type !== 'Any' || 
+                                      prefs.furnishing !== 'Any' ||
+                                      prefs.min_bedrooms
             
-            // Activer l'alerte par défaut si l'utilisateur a des préférences
-            if (prefs.address || prefs.min_price || prefs.max_price || prefs.type !== 'Any' || prefs.furnishing !== 'Any') {
-              setIsAlertActive(true)
-              setAlertButtonText(language === 'de' ? 'Alerte aktualisieren' : 'Update alert')
-              
-              // Créer automatiquement l'alerte avec les préférences
-              createAlertFromPreferences(prefs)
+            if (hasValidPreferences) {
+              applyPreferencesToSearchCriteria(prefs, 'API')
+              preferencesApplied = true
+              console.log('✅ Préférences appliquées depuis l\'API')
             }
           }
+        }
+        
+        // Fallback vers localStorage si aucune préférence valide n'a été trouvée dans l'API
+        if (!preferencesApplied) {
+          const localPrefs = loadPreferencesFromLocalStorage()
+          if (localPrefs) {
+            // Vérifier si les préférences localStorage ne sont pas vides
+            const hasValidLocalPreferences = localPrefs.address || 
+                                            localPrefs.min_price || 
+                                            localPrefs.max_price || 
+                                            localPrefs.type !== 'Any' || 
+                                            localPrefs.furnishing !== 'Any' ||
+                                            localPrefs.min_bedrooms
+            
+            if (hasValidLocalPreferences) {
+              applyPreferencesToSearchCriteria(localPrefs, 'localStorage')
+              preferencesApplied = true
+              console.log('✅ Préférences appliquées depuis localStorage (fallback)')
+            }
+          }
+        }
+        
+        if (!preferencesApplied) {
+          console.log('ℹ️ Aucune préférence disponible (ni API ni localStorage)')
         }
         
       } catch (err) {
@@ -240,7 +363,7 @@ export default function SearchPage() {
     if (user) {
       fetchListingsAndPreferences()
     }
-  }, [user])
+  }, [user, applyPreferencesToSearchCriteria])
 
   // Fonction pour gérer l'actualisation des annonces visibles
   const handleRefreshVisibleListings = useCallback((visibleListings: Listing[]) => {
@@ -272,46 +395,6 @@ export default function SearchPage() {
     setVisibleListings(visibleListings)
     setIsFilteredByMap(true)
   }, [allListings])
-
-  // Fonction pour créer automatiquement une alerte à partir des préférences
-  const createAlertFromPreferences = async (prefs: any) => {
-    if (!user) return
-
-    try {
-      const alertData = {
-        title: `Alert for ${prefs.city || 'Berlin'} - ${prefs.type || 'Any'}`,
-        criteria: {
-          city: prefs.city || 'Berlin',
-          type: prefs.type || 'Any',
-          max_price: prefs.max_price || 10000,
-          min_price: prefs.min_price || 0,
-          min_surface: prefs.min_surface || 0,
-          min_bedrooms: prefs.min_bedrooms || 0,
-          furnishing: prefs.furnishing || 'Any',
-          address: prefs.address || '',
-          radius: prefs.radius || 5
-        },
-        frequency: 'daily',
-        email: user.email
-      }
-
-      const response = await fetch('/api/alerts/simple', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(alertData)
-      })
-
-      if (response.ok) {
-        console.log('Alert created automatically from preferences')
-      } else {
-        console.error('Failed to create alert from preferences')
-      }
-    } catch (error) {
-      console.error('Error creating alert from preferences:', error)
-    }
-  }
 
   // Fonction pour gérer l'alerte email
   const handleEmailAlert = async () => {

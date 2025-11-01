@@ -24,21 +24,45 @@ export default function CriteriaPage() {
     bedrooms: ''
   })
 
-  // Récupérer les prix depuis les paramètres URL et les sauvegarder
+  // Récupérer les prix depuis les paramètres URL UNE SEULE FOIS au chargement
+  // Ne pas écraser le type/furnishing sélectionnés par l'utilisateur
   useEffect(() => {
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
-    const type = searchParams.get('type')
+    const typeFromUrl = searchParams.get('type')
+    
+    // Charger les préférences existantes depuis localStorage pour ne pas les écraser
+    const existingPrefs = (() => {
+      try {
+        const temp = localStorage.getItem('temp_preferences')
+        if (temp) {
+          const parsed = JSON.parse(temp)
+          return parsed.preferences || {}
+        }
+      } catch (e) {
+        // Ignore
+      }
+      return {}
+    })()
     
     if (minPrice && maxPrice) {
-      // Sauvegarder les prix dans les préférences utilisateur
-      savePreferences('criteria', {
+      // Sauvegarder uniquement les prix, NE JAMAIS écraser le type/furnishing sélectionnés
+      const preferencesToSave: any = {
         min_price: parseInt(minPrice),
-        max_price: parseInt(maxPrice),
-        type: type || 'Any'
-      })
+        max_price: parseInt(maxPrice)
+      }
+      
+      // NE PAS toucher au type s'il existe déjà dans les préférences ou dans criteria
+      // Seulement utiliser le type de l'URL si aucune sélection n'a été faite
+      const hasExistingType = criteria.housingType || existingPrefs.type
+      if (!hasExistingType && typeFromUrl) {
+        preferencesToSave.type = typeFromUrl
+      }
+      // Sinon, on préserve le type existant (ne pas le mettre dans preferencesToSave)
+      
+      savePreferences('criteria', preferencesToSave)
     }
-  }, [searchParams, savePreferences])
+  }, []) // Exécuter UNE SEULE FOIS au montage, pas à chaque changement de searchParams
 
   const steps = [
     {
@@ -61,10 +85,46 @@ export default function CriteriaPage() {
     }
   ]
 
-  const handleOptionSelect = (option: string) => {
+  const handleOptionSelect = async (option: string) => {
     const currentStepData = steps[currentStep]
     const newCriteria = { ...criteria, [currentStepData.id]: option }
     setCriteria(newCriteria)
+    
+    // Prepare preferences to save
+    const preferencesToSave: any = {}
+    
+    // Map housingType to type
+    if (currentStepData.id === 'housingType') {
+      preferencesToSave.type = option
+    }
+    
+    // Map furnishing
+    if (currentStepData.id === 'furnishing') {
+      preferencesToSave.furnishing = option
+    }
+    
+    // Map bedrooms and convert "2+" format to number 2
+    if (currentStepData.id === 'bedrooms') {
+      const bedroomsString = option.replace('+', '').trim()
+      const bedroomsNumber = parseInt(bedroomsString, 10)
+      if (!isNaN(bedroomsNumber) && bedroomsNumber > 0) {
+        preferencesToSave.min_bedrooms = bedroomsNumber
+        console.log(`✅ Converted bedrooms "${option}" to number ${bedroomsNumber}`)
+      } else {
+        console.error(`❌ Invalid bedrooms value: "${option}"`)
+      }
+    }
+    
+    // Save preferences immediately after each selection
+    if (Object.keys(preferencesToSave).length > 0) {
+      try {
+        console.log('💾 Saving criteria preferences:', preferencesToSave)
+        await savePreferences('criteria', preferencesToSave)
+        console.log('✅ Criteria preferences saved')
+      } catch (error) {
+        console.error('❌ Error saving criteria preferences:', error)
+      }
+    }
     
     // Auto-advance to next step or go to address page
     if (currentStep < steps.length - 1) {
@@ -72,7 +132,32 @@ export default function CriteriaPage() {
         setCurrentStep(prev => prev + 1)
       }, 300)
     } else {
-      // Last step - go to address page
+      // Last step - save all criteria one more time before redirecting
+      const finalPreferences: any = {}
+      if (newCriteria.housingType) {
+        finalPreferences.type = newCriteria.housingType
+      }
+      if (newCriteria.furnishing) {
+        finalPreferences.furnishing = newCriteria.furnishing
+      }
+      if (newCriteria.bedrooms) {
+        const bedroomsString = newCriteria.bedrooms.replace('+', '').trim()
+        const bedroomsNumber = parseInt(bedroomsString, 10)
+        if (!isNaN(bedroomsNumber) && bedroomsNumber > 0) {
+          finalPreferences.min_bedrooms = bedroomsNumber
+          console.log(`✅ Final conversion: bedrooms "${newCriteria.bedrooms}" to number ${bedroomsNumber}`)
+        }
+      }
+      
+      if (Object.keys(finalPreferences).length > 0) {
+        try {
+          await savePreferences('criteria', finalPreferences)
+          console.log('✅ Final criteria preferences saved before redirect')
+        } catch (error) {
+          console.error('❌ Error saving final criteria preferences:', error)
+        }
+      }
+      
       setTimeout(() => {
         window.location.href = '/criteria/address'
       }, 300)

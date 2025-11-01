@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
           plan_expires_at: expiresAt,
           subscription_status: 'active',
           last_payment_date: now,
-          plan_duration_days: durationDays
+          plan_duration_days: durationDays,
+          onboarding_completed: true
         }
       }
     )

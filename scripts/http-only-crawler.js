@@ -2655,7 +2655,7 @@ class HttpOnlyCrawler {
           }
         } else {
           // Fallback à startFromSearchPage si l'analyse avancée ne trouve rien
-          console.log(`⚠️  Advanced analysis found ${analysis.listingLinkCount} links, trying fallback...`)
+          console.log(`⚠️  No listings found via advanced analysis, trying fallback method...`)
           const listingUrls = await this.startFromSearchPage(this.rootUrl)
           this.listingUrls = new Set(listingUrls)
         }

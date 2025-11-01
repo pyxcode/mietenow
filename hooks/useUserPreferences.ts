@@ -26,12 +26,44 @@ export interface OnboardingState {
 export function useUserPreferences() {
   const { user } = useAuth()
   const router = useRouter()
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    city: 'Berlin',
-    max_price: 1500,
-    type: 'Any',
-    furnishing: 'Any'
-  })
+  
+  // Initialiser les préférences en chargeant depuis localStorage si pas d'utilisateur
+  const getInitialPreferences = (): UserPreferences => {
+    if (typeof window !== 'undefined' && !user) {
+      try {
+        const tempPrefs = localStorage.getItem('temp_preferences')
+        if (tempPrefs) {
+          const parsed = JSON.parse(tempPrefs)
+          if (parsed.preferences) {
+            console.log('📥 Préférences chargées depuis localStorage:', parsed.preferences)
+            // IMPORTANT: Utiliser d'abord les valeurs par défaut
+            // PUIS le spread de parsed.preferences va ÉCRASER les valeurs par défaut
+            // avec les vraies valeurs sauvegardées
+            return {
+              // Valeurs par défaut (seront écrasées si présentes dans parsed.preferences)
+              city: 'Berlin',
+              max_price: 1500,
+              type: 'Any',
+              furnishing: 'Any',
+              // Spread operator: les valeurs de parsed.preferences ÉCRASENT les valeurs par défaut
+              // Exemple: si parsed.preferences.type = 'Room', alors type devient 'Room' ✅
+              ...parsed.preferences
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading temp preferences from localStorage:', error)
+      }
+    }
+    return {
+      city: 'Berlin',
+      max_price: 1500,
+      type: 'Any',
+      furnishing: 'Any'
+    }
+  }
+  
+  const [preferences, setPreferences] = useState<UserPreferences>(getInitialPreferences())
   const [onboardingState, setOnboardingState] = useState<OnboardingState>({
     onboarding_completed: false,
     current_step: 'rent'
@@ -42,12 +74,38 @@ export function useUserPreferences() {
   useEffect(() => {
     if (user) {
       loadUserPreferences()
+    } else {
+      // Charger depuis localStorage si pas d'utilisateur
+      const tempPrefs = localStorage.getItem('temp_preferences')
+      if (tempPrefs) {
+        try {
+          const parsed = JSON.parse(tempPrefs)
+          if (parsed.preferences) {
+            console.log('📥 Préférences chargées depuis localStorage (useEffect):', parsed.preferences)
+            setPreferences(prev => ({ ...prev, ...parsed.preferences }))
+          }
+        } catch (error) {
+          console.error('Error loading temp preferences:', error)
+        }
+      }
     }
   }, [user])
 
   const loadUserPreferences = async () => {
     try {
-      const response = await fetch('/api/user/preferences')
+      // Get userId from user object or localStorage
+      const userId = user?.id || localStorage.getItem('userId') || sessionStorage.getItem('userId')
+      
+      const url = userId 
+        ? `/api/user/preferences?userId=${userId}`
+        : '/api/user/preferences'
+      
+      const headers: HeadersInit = {}
+      if (userId) {
+        headers['x-user-id'] = userId
+      }
+      
+      const response = await fetch(url, { headers })
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -67,30 +125,75 @@ export function useUserPreferences() {
     // Si pas d'utilisateur connecté, sauvegarder temporairement dans localStorage
     if (!user) {
       try {
+        // IMPORTANT: Charger les préférences existantes depuis localStorage d'abord
+        // pour éviter d'écraser avec des valeurs par défaut du state
+        let existingPrefs: UserPreferences = {
+          city: 'Berlin',
+          max_price: 1500,
+          type: 'Any',
+          furnishing: 'Any'
+        }
+        
+        try {
+          const tempPrefs = localStorage.getItem('temp_preferences')
+          if (tempPrefs) {
+            const parsed = JSON.parse(tempPrefs)
+            if (parsed.preferences) {
+              existingPrefs = { ...existingPrefs, ...parsed.preferences }
+              console.log('📥 Préférences existantes chargées depuis localStorage:', parsed.preferences)
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ Could not load existing preferences from localStorage:', e)
+        }
+        
+        // Fusionner: d'abord les préférences existantes, puis les nouvelles
+        const mergedPreferences = newPreferences 
+          ? { 
+              ...existingPrefs,  // D'abord les préférences depuis localStorage
+              ...newPreferences   // Puis les nouvelles (écrasent seulement les champs définis)
+            }
+          : existingPrefs
+        
         const tempPreferences = {
           step,
-          preferences: newPreferences ? { ...preferences, ...newPreferences } : preferences,
+          preferences: mergedPreferences,
           timestamp: Date.now()
         }
         localStorage.setItem('temp_preferences', JSON.stringify(tempPreferences))
-        console.log('Préférences sauvegardées temporairement:', tempPreferences)
+        console.log('💾 Préférences sauvegardées temporairement:', {
+          step,
+          newPreferences: newPreferences || '(none)',
+          existingPrefs,
+          mergedPreferences,
+          fullTemp: tempPreferences
+        })
+        
+        // Mettre à jour le state local aussi
+        setPreferences(mergedPreferences)
+        
         return true
       } catch (error) {
-        console.error('Error saving temp preferences:', error)
+        console.error('❌ Error saving temp preferences:', error)
         return false
       }
     }
 
     setLoading(true)
     try {
+      // Get userId from user object or localStorage
+      const userId = user?.id || localStorage.getItem('userId') || sessionStorage.getItem('userId')
+      
       const response = await fetch('/api/user/preferences', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(userId ? { 'x-user-id': userId } : {})
         },
         body: JSON.stringify({
           step,
-          preferences: newPreferences ? { ...preferences, ...newPreferences } : preferences
+          preferences: newPreferences ? { ...preferences, ...newPreferences } : preferences,
+          ...(userId ? { userId } : {})
         })
       })
 
@@ -134,13 +237,18 @@ export function useUserPreferences() {
 
     setLoading(true)
     try {
+      // Get userId from user object or localStorage
+      const userId = user?.id || localStorage.getItem('userId') || sessionStorage.getItem('userId')
+      
       const response = await fetch('/api/user/preferences', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...(userId ? { 'x-user-id': userId } : {})
         },
         body: JSON.stringify({
-          search_preferences: { ...preferences, ...newPreferences }
+          search_preferences: { ...preferences, ...newPreferences },
+          ...(userId ? { userId } : {})
         })
       })
 

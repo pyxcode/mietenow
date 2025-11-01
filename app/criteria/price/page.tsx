@@ -40,6 +40,19 @@ export default function PriceCriteriaPage() {
         max_price: maxPrice
       })
       
+      // Vérifier que minPrice est valide
+      if (minPrice < 0 || isNaN(minPrice)) {
+        console.error('❌ Invalid minPrice:', minPrice)
+        alert(language === 'de' ? 'Ungültiger Mindestpreis' : 'Invalid minimum price')
+        return
+      }
+      
+      if (minPrice >= maxPrice) {
+        console.error('❌ minPrice must be less than maxPrice')
+        alert(language === 'de' ? 'Der Mindestpreis muss niedriger als der Höchstpreis sein' : 'Minimum price must be less than maximum price')
+        return
+      }
+      
       const saveResult = await savePreferences('price', {
         min_price: minPrice,
         max_price: maxPrice
@@ -47,12 +60,20 @@ export default function PriceCriteriaPage() {
       
       console.log('✅ Price preferences saved:', saveResult)
       
+      if (!saveResult) {
+        console.error('❌ Save returned false, preferences may not be saved')
+        alert(language === 'de' ? 'Fehler beim Speichern der Preise' : 'Error saving price preferences')
+        return
+      }
+      
+      // Attendre un peu pour s'assurer que la sauvegarde est complète
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       // Redirect to address page
       router.push('/criteria/address')
     } catch (error) {
-      console.error('Error saving price preferences:', error)
-      // Redirect anyway
-      router.push('/criteria/address')
+      console.error('❌ Error saving price preferences:', error)
+      alert(language === 'de' ? 'Fehler beim Speichern der Preise' : 'Error saving price preferences')
     }
   }
 

@@ -14,49 +14,11 @@ config({ path: '.env.local' })
 
 import { writeFileSync } from 'fs'
 
-// Top 5 WORKING German rental websites (Berlin-focused, long-term rentals only)
-// Based on health check results - only websites that are reachable and contain rental listings
-const TOP_5_SITES = [
-  {
-    name: 'WG-Gesucht',
-    url: 'https://www.wg-gesucht.de/wohnungen-in-Berlin.8.0.1.0.html',
-    provider: 'wg-gesucht',
-    type: 'rental',
-    status: 'working'
-  },
-  {
-    name: 'ImmoWelt',
-    url: 'https://www.immowelt.de/suche/berlin/wohnungen/mieten',
-    provider: 'immowelt',
-    type: 'rental',
-    status: 'working'
-  },
-  {
-    name: 'ImmoNet',
-    url: 'https://www.immonet.de/immobiliensuche/sel.do?objecttype=2&sortby=20&marketingtype=1&locationname=Berlin',
-    provider: 'immonet',
-    type: 'rental',
-    status: 'working'
-  },
-  {
-    name: 'eBay Kleinanzeigen',
-    url: 'https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/c182l3331',
-    provider: 'kleinanzeigen',
-    type: 'rental',
-    status: 'working'
-  },
-  {
-    name: 'Immopool',
-    url: 'https://www.immopool.de/immobilien/wohnungen/berlin/mieten',
-    provider: 'immopool',
-    type: 'rental',
-    status: 'working'
-  }
-]
+// Import de la liste centralisée des sites à scraper
+import { SCRAPING_SITES, TOP_10_SITES, TOP_20_SITES } from './scraping-sites.js'
 
-// Legacy support - keep old names for compatibility
-const TOP_10_SITES = TOP_5_SITES
-const TOP_20_SITES = TOP_5_SITES
+// Utiliser la liste centralisée
+const TOP_5_SITES = SCRAPING_SITES
 
 // Import HttpOnlyCrawler at top level
 let HttpOnlyCrawler
@@ -181,4 +143,5 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith
     })
 }
 
-export { scrapeAll, TOP_20_SITES, TOP_10_SITES, scrapeSite }
+// Exporter les sites pour compatibilité avec les autres scripts
+export { scrapeAll, scrapeSite, TOP_5_SITES, TOP_10_SITES, TOP_20_SITES }

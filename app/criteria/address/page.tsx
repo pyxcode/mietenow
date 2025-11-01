@@ -45,28 +45,45 @@ export default function AddressCriteriaPage() {
 
   const handleContinue = async () => {
     try {
+      // Assurer que l'adresse est bien définie
+      const addressToSave = address.trim() || exactAddress.trim() || ''
+      
       console.log('💾 Saving address preferences:', {
-        address,
-        exact_address: exactAddress,
+        address: addressToSave,
+        exact_address: exactAddress.trim() || addressToSave,
         radius,
         coordinates: selectedCoordinates
       })
       
+      if (!addressToSave) {
+        console.error('❌ Address is empty, cannot save')
+        alert(language === 'de' ? 'Bitte geben Sie eine Adresse ein' : 'Please enter an address')
+        return
+      }
+      
       const saveResult = await savePreferences('address', {
-        address,
-        exact_address: exactAddress,
+        address: addressToSave,
+        exact_address: exactAddress.trim() || addressToSave,
         radius,
         coordinates: selectedCoordinates || undefined
       })
       
       console.log('✅ Address preferences saved:', saveResult)
       
+      if (!saveResult) {
+        console.error('❌ Save returned false, preferences may not be saved')
+        alert(language === 'de' ? 'Fehler beim Speichern der Adresse' : 'Error saving address')
+        return
+      }
+      
+      // Attendre un peu pour s'assurer que la sauvegarde est complète
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       // Redirect to signup page
       router.push('/signup')
     } catch (error) {
-      console.error('Error saving address preferences:', error)
-      // Redirect anyway
-      router.push('/signup')
+      console.error('❌ Error saving address preferences:', error)
+      alert(language === 'de' ? 'Fehler beim Speichern der Adresse' : 'Error saving address')
     }
   }
 

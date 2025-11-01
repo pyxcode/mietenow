@@ -101,6 +101,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
         user.subscription_status = 'active'
         user.last_payment_date = new Date()
         user.plan_duration_days = getPlanDurationDays(plan)
+        user.onboarding_completed = true
         await user.save()
 
         console.log('Transaction created and user updated:', {

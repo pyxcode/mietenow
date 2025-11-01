@@ -11,22 +11,54 @@ export async function POST(request: NextRequest) {
       email 
     } = body
 
-    console.log('Creating/updating alert:', { title, criteria, email })
+    // Validation des champs requis
+    if (!email) {
+      console.error('❌ Missing email in alert creation request')
+      return NextResponse.json({ 
+        error: 'Email is required',
+        message: 'Email is required to create an alert'
+      }, { status: 400 })
+    }
+
+    if (!criteria) {
+      console.error('❌ Missing criteria in alert creation request')
+      return NextResponse.json({ 
+        error: 'Criteria is required',
+        message: 'Criteria is required to create an alert'
+      }, { status: 400 })
+    }
+
+    console.log('📧 Creating/updating alert:', { title, criteria: JSON.stringify(criteria), email })
 
     // Connecter à MongoDB - FORCER mietenow-prod
-    const client = await createMongoClient()
+    let client
+    try {
+      client = await createMongoClient()
+      console.log('✅ MongoDB client created')
+    } catch (dbError) {
+      console.error('❌ Failed to create MongoDB client:', dbError)
+      return NextResponse.json({ 
+        error: 'Database connection failed',
+        message: dbError instanceof Error ? dbError.message : 'Unknown database error'
+      }, { status: 500 })
+    }
+
     const db = client.db('mietenow-prod')
+    console.log('✅ Using database:', db.databaseName)
+    
     const collection = db.collection('alerts')
     
     // Vérifier s'il existe déjà une alerte pour cet email
     const existingAlert = await collection.findOne({ 
-      email: email || 'test@example.com',
+      email: email,
       active: true 
     })
     
+    console.log(existingAlert ? `📋 Existing alert found: ${existingAlert._id}` : '📝 No existing alert, creating new one')
+    
     const alertData = {
-      email: email || 'test@example.com',
-      title,
+      email: email,
+      title: title || `Alert for ${criteria.city || 'Berlin'}`,
       criteria,
       frequency,
       active: true,
@@ -36,29 +68,38 @@ export async function POST(request: NextRequest) {
     let result
     let message
     
-    if (existingAlert) {
-      // Mettre à jour l'alerte existante
-      result = await collection.updateOne(
-        { _id: existingAlert._id },
-        { 
-          $set: {
-            ...alertData,
-            updated_at: new Date()
+    try {
+      if (existingAlert) {
+        // Mettre à jour l'alerte existante
+        result = await collection.updateOne(
+          { _id: existingAlert._id },
+          { 
+            $set: {
+              ...alertData,
+              updated_at: new Date()
+            }
           }
+        )
+        message = 'Alert updated successfully'
+        console.log('✅ Alert updated successfully:', existingAlert._id, 'Modified count:', result.modifiedCount)
+      } else {
+        // Créer une nouvelle alerte
+        const newAlert = {
+          ...alertData,
+          user_id: new Date().getTime().toString(), // ID temporaire
+          created_at: new Date()
         }
-      )
-      message = 'Alert updated successfully'
-      console.log('Alert updated successfully:', existingAlert._id)
-    } else {
-      // Créer une nouvelle alerte
-      const newAlert = {
-        ...alertData,
-        user_id: new Date().getTime().toString(), // ID temporaire
-        created_at: new Date()
+        result = await collection.insertOne(newAlert)
+        message = 'Alert created successfully'
+        console.log('✅ Alert created successfully:', result.insertedId)
       }
-      result = await collection.insertOne(newAlert)
-      message = 'Alert created successfully'
-      console.log('Alert created successfully:', result.insertedId)
+    } catch (dbOpError) {
+      console.error('❌ Database operation failed:', dbOpError)
+      await client.close()
+      return NextResponse.json({ 
+        error: 'Failed to save alert',
+        message: dbOpError instanceof Error ? dbOpError.message : 'Unknown database operation error'
+      }, { status: 500 })
     }
     
     await client.close()
@@ -70,10 +111,11 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error creating/updating alert:', error)
+    console.error('❌ Error creating/updating alert:', error)
     return NextResponse.json({ 
       error: 'Failed to create/update alert',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
     }, { status: 500 })
   }
 }
